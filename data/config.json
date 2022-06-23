@@ -1,5 +1,4 @@
 {
-    "project_storage": "C:\\Users\\ryan\\OneDrive\\Documents\\projects",
     "rp_manifest": {
         "format_version": 2,
         "header": {
@@ -96,5 +95,30 @@
             }
         ],
         "format_version": 2
+    },
+    "blocks.json": {
+        "format_version": "1.16.0"
+    },
+    "terrain_texture.json": {
+        "resource_pack_name": "PACK NAME",
+        "texture_name": "atlas.terrain",
+        "padding": 8,
+        "num_mip_levels": 4,
+        "texture_data": {}
+    },
+    "item_texture.json": {
+        "resource_pack_name": "PACK NAME",
+        "texture_name": "atlas.items",
+        "texture_data": {}
+    },
+    "sounds.json": {
+        "entity_sounds": {
+            "entities": {}
+        },
+        "block_sounds": {}
+    },
+    "sound_definitions.json": {
+        "format_version": "1.14.0",
+        "sound_definitions": {}
     }
 }

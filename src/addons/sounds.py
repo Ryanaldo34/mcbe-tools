@@ -1,7 +1,6 @@
 import os
 from pathlib import Path
 from .helpers.file_handling import data_from_file, write_to_file
-from .helpers.errors import InvalidArgError
 import pprint
 
 def createDefs(RP_PATH: Path, category_path: Path, definition_data: dict, category: str = 'neutral') -> dict:
@@ -9,7 +8,6 @@ def createDefs(RP_PATH: Path, category_path: Path, definition_data: dict, catego
     Creates the sound definitions for a given category path
     """
     if not category_path.is_dir():
-        # raise InvalidArgError(RP_PATH, createDefs)
         print('There are not entity sounds available')
         return None
 

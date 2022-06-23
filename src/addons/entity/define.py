@@ -3,6 +3,7 @@ import addons.entity.client_entity as ce
 from addons.sounds import implement_sounds
 from addons.helpers.file_handling import *
 from pathlib import Path
+from addons.errors import *
 
 Entity = ce.entity.Entity
 RenderController = ce.render_controller.RenderController
@@ -17,7 +18,7 @@ def define_materials(default: bool) -> dict[str, str]:
         materials = input('Enter the names of materials to be used in the entity (use space to separate): ').split(' ')
         material_names = []
         for material in materials:
-            name = input(f'what is the short-name of the material-> {material}: ')
+            name = input(f'what is the short-name of the material -> {material}: ')
             material_names.append(name)
 
         return { name: value for name, value in zip(material_names, materials) }
@@ -40,7 +41,7 @@ def define_animations(entity: Entity, rp_folder: Path) -> None:
         entity.anims = { animation.split('.')[-1]: animation for animation in list(anim_data['animations']) }
 
     else:
-        pass
+        if ANIM_ERROR: raise MissingAnimationError('The entity is missing a required animation file!')
 
 def define_animation_controllers(entity: Entity, rp_folder: Path) -> None:
     """ 
@@ -57,7 +58,7 @@ def define_animation_controllers(entity: Entity, rp_folder: Path) -> None:
         entity.acs = [ {controller.split('.')[-1]: controller} for controller in list(ac_data['animation_controllers']) ]
 
     else:
-        pass
+        if AC_ERROR: raise MissingAnimationControllerFile('The entity has a required animation controller that is missing!')
 
 def define_textures(entity: Entity, rp_folder: Path):
     """ 
@@ -90,24 +91,39 @@ def define_textures(entity: Entity, rp_folder: Path):
             entity.textr_paths = [f'textures/entity/{name}']
 
         else:
+            if TEXTURE_ERRORS: raise MissingTextureError('The entity is missing a required texture file')
+                
             entity.textr_name_val_map = None
 
 @app.command()
 def define( rp_folder: Path = typer.Argument(None),
             entity_file: Path = typer.Argument(None),
             default: bool = typer.Option(True, help='Whether the entity has a default rc'),
-            dummy: bool = typer.Option(False, help='If the entity is a dummy')) -> None:
+            dummy: bool = typer.Option(False, help='If the entity is a dummy')
+    ) -> None:
     """
     Writes the client entity and render controller files of an entity
     """
-    materials: dict = define_materials(default)
-        
-    geo_data = {}
-    geo_path = rp_folder.joinpath('models', 'entity', f'{entity_file.stem}.geo.json')
     entity_data = data_from_file(entity_file)
     behaviors = ce.behaviors.EntityBehaviors(entity_data)
-    geo_data = data_from_file(geo_path)
-    geo_object = ce.geo.Geometry(geo_data, dummy=False) if not dummy else ce.geo.Geometry(geo_data, dummy=True)
+    
+    if dummy:
+        print('writing dummy ce file...')
+        geo_object = ce.geo.Geometry(data_from_file(geo_path), dummy=True)
+        materials = { 'default': 'entity_alphatest' }
+        entity = Entity(materials, geo_object, behaviors)
+
+        json.dumps(entity.write_client_entity(rp_folder.joinpath('entity'), dummy=True), indent=4, sort_keys=True)
+        return None
+
+    materials: dict = define_materials(default)
+    geo_path = rp_folder.joinpath('models', 'entity', f'{entity_file.stem}.geo.json')
+    geo_data: dict = data_from_file(geo_path)
+    
+    if geo_data is None and GEO_ERRORS:
+        raise MissingGeometryError('The entity is missing a required geometry definition!')
+
+    geo_object = ce.geo.Geometry(geo_data, dummy=False)
     entity = Entity(materials, geo_object, behaviors)
     # animations and textures defined (update with path obj)
     define_animations(entity, rp_folder)
@@ -116,18 +132,11 @@ def define( rp_folder: Path = typer.Argument(None),
     # particles & sounds defined
     entity.sounds = implement_sounds(entity.name, rp_folder)
     # create render controller, no need for one if it is a dummy
-    if dummy:
-        print('writing ce file...')
-        print(entity.write_client_entity(os.path.join(rp_folder, 'entity')))
+    bones = geo_object.get_bones()
+    render_controller = RenderController(entity, f'controller.render.{entity.name}', bones)
+    render_controller.map_mats_to_bones()
 
-    else:
-        bones = geo_object.get_bones()
-        rc_name = 'controller.render.{0}'.format(entity.name)
-        render_controller = RenderController(entity, 'controller.render.{0}'.format(entity.name, rc_name), bones)
-
-        render_controller.map_mats_to_bones()
-        print(json.dumps(render_controller.convert_to_file(rp_folder.joinpath('render_controllers')), indent=4, sort_keys=True))
-
+    print(json.dumps(render_controller.convert_to_file(rp_folder.joinpath('render_controllers')), indent=4, sort_keys=True))
     # write the client_entity file
     print(json.dumps(entity.write_client_entity(rp_folder), indent=4, sort_keys=True))
     entity.write_lang(rp_folder)

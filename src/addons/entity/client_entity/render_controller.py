@@ -1,4 +1,4 @@
-from addons.helpers.errors import *
+from addons.errors import *
 from addons.helpers.file_handling import *
 from .entity import Entity
 import re
@@ -14,7 +14,7 @@ class RenderController:
         self.__textr_paths = linked_entity.textr_paths
         self.__geo_names = linked_entity.geo_names
         self.__material_names = linked_entity.material_names
-        self.__mat_to_bone_map = [] # fix this
+        self.__mat_to_bone_map = []
         self.__arrays = self.__make_arrays()
         print(self.__arrays)
         self.__textr_arr_indexes = linked_entity.get_textr_indexes(self.__arrays)
@@ -62,7 +62,6 @@ class RenderController:
     def map_mats_to_bones(self) -> list[dict[str, str]]:
         mat_names = self.__material_names
         bones = self.__bones
-
         # if there are multiple materials defined
         if len(mat_names) > 1:
             for name in mat_names:

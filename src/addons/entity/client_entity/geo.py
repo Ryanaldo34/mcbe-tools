@@ -1,4 +1,4 @@
-from addons.helpers.errors import *
+from addons.errors import BadDataInputExcep
 
 class Geometry:
 

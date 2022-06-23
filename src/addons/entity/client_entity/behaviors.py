@@ -1,4 +1,4 @@
-from addons.helpers.errors import BadDataInputExcep
+from addons.errors import BadDataInputExcep
 
 
 class EntityBehaviors:

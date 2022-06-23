@@ -1,11 +1,15 @@
+from pathlib import Path
 import uuid, os, shutil, typer
 from zipfile import ZipFile
 from PIL import Image
-from .helpers.file_handling import write_to_file, data_from_file
+from addons.helpers.file_handling import write_to_file, data_from_file
+import addons.paths as paths
 
-config_data = data_from_file(r'C:\Users\ryan\OneDrive\Documents\projects\bedrockscript\data\config.json')
-projects_path: str = config_data['project_storage']
+data = data_from_file(Path('../data/config.json'))
+projects_path = Path(paths.PROJECTS)
 languages = ['en_US']
+bp_folders = ['animation_controllers', 'animations', 'blocks', 'features', 'functions', 'items', 'entities', 'structures', 'biomes', 'loot_tables', 'trades']
+rp_folders = ['animation_controllers', 'animations', 'items', 'entity', 'models', 'particles', 'render_controllers', *paths.MODELS.values(), *paths.SOUNDS.values(), *paths.TEXTURES.values()]
 app = typer.Typer()
 
 @app.command()
@@ -13,19 +17,16 @@ def create(project_name: str) -> None:
     """ Creates a new blank project template in the user's dedicated project folder
     
     """
-    bp_folders: list = ['animation_controllers', 'animations', 'blocks', 'features', 'functions', 'items', 'entity', 'structures', 'biomes', 'loot_tables', 'trades']
-    rp_folders: list = ['animation_controllers', 'animations', 'item', 'entity', 'models', 'models{0}entity'.format(os.sep), 'particles', 'sounds', 'render_controllers', 
-    'textures', 'textures{0}entity'.format(os.sep), 'textures{0}items'.format(os.sep)]
-    rp_manifest: dict = config_data['rp_manifest']
-    bp_manifest: dict = config_data['bp_manifest']
+    rp_manifest: dict = data['rp_manifest']
+    bp_manifest: dict = data['bp_manifest']
     rp_header = str(uuid.uuid4())
     rp_name: str = project_name.lower().replace(' ', '_') + '_RP'
     bp_name: str = project_name.lower().replace(' ', '_') + '_BP'
 
-    os.chdir(projects_path)
-    os.mkdir(project_name)
-    os.mkdir(os.path.join(project_name, rp_name))
-    os.mkdir(os.path.join(project_name, bp_name))
+    project_path = projects_path.joinpath(project_name)
+    project_path.mkdir()
+    project_path.joinpath(rp_name).mkdir()
+    project_path.joinpath(bp_name).mkdir()
 
     rp_manifest['header']['uuid'] = rp_header
     rp_manifest['header']['name'] = project_name + ' RP'
@@ -43,33 +44,27 @@ def create(project_name: str) -> None:
     bp_manifest['dependencies'][0]['uuid'] = rp_header
 
     for folder in rp_folders:
-
-        os.mkdir(os.path.join(project_name, rp_name, folder))
+        project_path.joinpath(rp_name, folder).mkdir(parents=True, exist_ok=True)
 
     for folder in bp_folders:
+        project_path.joinpath(bp_name, folder).mkdir(parents=True, exist_ok=True)
 
-        os.mkdir(os.path.join(project_name, bp_name, folder))
+    blocks = data['blocks.json']
+    sounds = data['sounds.json']
+    sound_defs = data['sound_definitions.json']
+    terrain = data['terrain_texture.json']
+    terrain['resource_pack_name'] = project_name
+    items = data['item_texture.json']
+    items['resource_pack_name'] = project_name
 
-    write_to_file(os.path.join(project_name, rp_name, 'manifest.json'), data=rp_manifest, writing=True)
-    write_to_file(os.path.join(project_name, bp_name, 'manifest.json'), data=bp_manifest, writing=True)
-
-@app.command()
-def build(project_name: str) -> None:
-    """ Executes the script to "build" the project by running tests and moving the changes to the MC folders
-    
-    :param project_name: the name of the project that is being built, the world names and packs names folders must match for the script to work
-    """
-    project_path: str = os.path.join(projects_path, project_name)
-    project_bp: str = os.path.join(project_path, '{0}_BP'.format(project_name.replace(' ', '_').lower()))
-    project_rp: str = os.path.join(project_path, '{0}_RP'.format(project_name.replace(' ', '_').lower()))
-    if not os.path.exists(project_path):
-        raise FileNotFoundError('The project has not yet been created!')
-
-    dev_bps: str = r'%LocalAppData%\Packages\Microsoft.MinecraftUWP_8wekyb3d8bbwe\LocalState\games\com.mojang\development_behavior_packs'
-    dev_rps: str = r'%LocalAppData%\Packages\Microsoft.MinecraftUWP_8wekyb3d8bbwe\LocalState\games\com.mojang\development_resoource_packs'
-
-    shutil.copy(project_bp, dev_bps)
-    shutil.copy(project_rp, dev_rps)
+    write_to_file(project_path.joinpath(rp_name, 'manifest.json'), data=rp_manifest, writing=True)
+    write_to_file(project_path.joinpath(bp_name, 'manifest.json'), data=bp_manifest, writing=True)
+    write_to_file(project_path.joinpath(rp_name, 'blocks.json'), data=blocks, writing=True)
+    write_to_file(project_path.joinpath(rp_name, 'sounds.json'), data=sounds, writing=True)
+    write_to_file(project_path.joinpath(rp_name, 'sounds', 'sound_definitions.json'), data=sound_defs, writing=True)
+    write_to_file(project_path.joinpath(rp_name, 'textures', 'item_texture.json'), data=items, writing=True)
+    write_to_file(project_path.joinpath(rp_name, 'textures', 'terrain_texture.json'), data=terrain, writing=True)
+    write_to_file(project_path.joinpath(rp_name, 'textures', 'flipbook_textures.json'), data=[], writing=True)
 
 @app.command()
 def package(project_name: str, project_description: str, assets_zip_folder: str) -> None:
@@ -88,7 +83,7 @@ def package(project_name: str, project_description: str, assets_zip_folder: str)
 
     else:
         package_path = os.path.join(package_path, search_name)
-        world_template = os.path.join(package_path, 'world_template')
+        world_template = os.path.join(package_path, 'Content', 'world_template')
         template_texts = os.path.join(world_template, 'texts')
         texts = [f'pack.name={project_name}', f'pack.description{project_description}']
         os.mkdirs(template_texts)
@@ -102,7 +97,7 @@ def package(project_name: str, project_description: str, assets_zip_folder: str)
                 if el not in bad_files:
                     shutil.copy(os.path.join(world_folder_path, el), world_template)
 
-        manifest: dict = config_data['world_template_manifest']
+        manifest: dict = data['world_template_manifest']
         for k, v in manifest.items():
             if type(v) == list:
                 for el in v:

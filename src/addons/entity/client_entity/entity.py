@@ -1,4 +1,3 @@
-import os
 from pathlib import Path
 from .behaviors import EntityBehaviors
 from addons.helpers.file_handling import data_from_file, write_to_file
@@ -140,7 +139,7 @@ class Entity:
         """
         self.__render_controllers.append(render_controller)
 
-    def write_client_entity(self, rp_path: Path) -> dict:
+    def write_client_entity(self, rp_path: Path, dummy=False) -> dict:
         """
         Uses encapsulated data to complete the data used for writing the client entity file and returns it
 
@@ -148,52 +147,68 @@ class Entity:
         :returns: the data to be written to the client entity file
         """
         entity_folder = rp_path.joinpath('entity')
-        output = {
-            'format_version': '1.8.0',
-            'minecraft:client_entity': {
-                'description': {
-                    'identifier': self.identifier,
-                    'materials': self.__materials,
-                    'geometry': self.__geo_name_val_map
-                }
-            }   
-        }
         file_name = '{0}.entity.json'.format(self.name)
         file_path = entity_folder.joinpath(file_name)
-        description = output['minecraft:client_entity']['description']
 
-        if self.__bp_data.is_spawnable():
-            description['spawn_egg'] = self.define_spawn_egg(rp_path)
+        if dummy:
+            output = {
+                'format_version': '1.8.0',
+                'minecraft:client_entity': {
+                    'description': {
+                        'identifier': self.identifier,
+                        'materials': { 'default': 'entity_alphatest' },
+                        'geometry': { 'default': 'geometry.dummy' }
+                    }
+                }   
+            }
+            write_to_file(file_path, output)
+            return output
+            
+        else: 
+            output = {
+                'format_version': '1.8.0',
+                'minecraft:client_entity': {
+                    'description': {
+                        'identifier': self.identifier,
+                        'materials': self.__materials,
+                        'geometry': self.__geo_name_val_map
+                    }
+                }   
+            }
+            description = output['minecraft:client_entity']['description']
 
-        # test to see if properties are filled and necessary to add to client entity
-        if self.__textr_name_val_map is not None:
-            description['textures'] = self.__textr_name_val_map
+            if self.__bp_data.is_spawnable():
+                description['spawn_egg'] = self.define_spawn_egg(rp_path)
 
-        if self.__anims is not None:
-            description['animations'] = self.__anims
+            # test to see if properties are filled and necessary to add to client entity
+            if self.__textr_name_val_map is not None:
+                description['textures'] = self.__textr_name_val_map
 
-        if self.__acs is not None:
-            description['animation_controllers'] = self.__acs
+            if self.__anims is not None:
+                description['animations'] = self.__anims
 
-        if self.__sounds is not None:
-            description['sounds'] = self.__sounds
+            if self.__acs is not None:
+                description['animation_controllers'] = self.__acs
 
-        if self.__particles is not None:
-            description['particles'] = self.__particles
+            if self.__sounds is not None:
+                description['sounds'] = self.__sounds
 
-        if self.__locators is not None:
-            description['locators'] = self.__locators
+            if self.__particles is not None:
+                description['particles'] = self.__particles
 
-        if len(self.__render_controllers) > 0:
-            description['render_controllers'] = self.__render_controllers
+            if self.__locators is not None:
+                description['locators'] = self.__locators
 
-        if self.__spawn_egg is not None:
-            description['spawn_egg'] = self.__spawn_egg
+            if len(self.__render_controllers) > 0:
+                description['render_controllers'] = self.__render_controllers
 
-        print('Writing to the client entity file right now!')
-        write_to_file(file_path, output, writing=True)
+            if self.__spawn_egg is not None:
+                description['spawn_egg'] = self.__spawn_egg
 
-        return output
+            print('Writing to the client entity file right now!')
+            write_to_file(file_path, output, writing=True)
+
+            return output
 
     def write_lang(self, RP_PATH: Path) -> None:
         """

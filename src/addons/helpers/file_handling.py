@@ -1,5 +1,5 @@
 import json, os
-from .errors import InvalidArgError
+from addons.errors import InvalidArgError
 from pathlib import Path
 from typing import Union
 

@@ -26,7 +26,7 @@ class Block:
         return self.identifier.replace('_', ' ').title()
 
 @app.command()
-def sounds(rp_path: Path = typer.Argument(None, help='The path to the resource pack where block sounds are being defined')):
+def sounds(rp_path: Path = typer.Argument(None, help='Resource pack where block sounds are being defined')):
     """
     Defines the sounds of blocks such as break, place, etc.
     """
