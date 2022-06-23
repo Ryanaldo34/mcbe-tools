@@ -113,33 +113,33 @@ def define( rp_folder: Path = typer.Argument(None),
         materials = { 'default': 'entity_alphatest' }
         entity = Entity(materials, geo_object, behaviors)
 
-        json.dumps(entity.write_client_entity(rp_folder.joinpath('entity'), dummy=True), indent=4, sort_keys=True)
-        return None
+        json.dumps(entity.write_client_entity(rp_folder, dummy=True), indent=4, sort_keys=True)
 
-    materials: dict = define_materials(default)
-    geo_path = rp_folder.joinpath('models', 'entity', f'{entity_file.stem}.geo.json')
-    geo_data: dict = data_from_file(geo_path)
-    
-    if geo_data is None and GEO_ERRORS:
-        raise MissingGeometryError('The entity is missing a required geometry definition!')
+    else:
+        materials: dict = define_materials(default)
+        geo_path = rp_folder.joinpath('models', 'entity', f'{entity_file.stem}.geo.json')
+        geo_data: dict = data_from_file(geo_path)
+        
+        if geo_data is None and GEO_ERRORS:
+            raise MissingGeometryError('The entity is missing a required geometry definition!')
 
-    geo_object = ce.geo.Geometry(geo_data, dummy=False)
-    entity = Entity(materials, geo_object, behaviors)
-    # animations and textures defined (update with path obj)
-    define_animations(entity, rp_folder)
-    define_animation_controllers(entity, rp_folder)
-    define_textures(entity, rp_folder)
-    # particles & sounds defined
-    entity.sounds = implement_sounds(entity.name, rp_folder)
-    # create render controller, no need for one if it is a dummy
-    bones = geo_object.get_bones()
-    render_controller = RenderController(entity, f'controller.render.{entity.name}', bones)
-    render_controller.map_mats_to_bones()
+        geo_object = ce.geo.Geometry(geo_data, dummy=False)
+        entity = Entity(materials, geo_object, behaviors)
+        # animations and textures defined (update with path obj)
+        define_animations(entity, rp_folder)
+        define_animation_controllers(entity, rp_folder)
+        define_textures(entity, rp_folder)
+        # particles & sounds defined
+        entity.sounds = implement_sounds(entity.name, rp_folder)
+        # create render controller, no need for one if it is a dummy
+        bones = geo_object.get_bones()
+        render_controller = RenderController(entity, f'controller.render.{entity.name}', bones)
+        render_controller.map_mats_to_bones()
 
-    print(json.dumps(render_controller.convert_to_file(rp_folder.joinpath('render_controllers')), indent=4, sort_keys=True))
-    # write the client_entity file
-    print(json.dumps(entity.write_client_entity(rp_folder), indent=4, sort_keys=True))
-    entity.write_lang(rp_folder)
+        print(json.dumps(render_controller.convert_to_file(rp_folder.joinpath('render_controllers')), indent=4, sort_keys=True))
+        # write the client_entity file
+        print(json.dumps(entity.write_client_entity(rp_folder, dummy=False), indent=4, sort_keys=True))
+        entity.write_lang(rp_folder)
 
 @app.command()
 def generate(template: str, bp_path: str):

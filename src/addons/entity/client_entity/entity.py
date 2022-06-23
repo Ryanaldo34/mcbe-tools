@@ -177,7 +177,7 @@ class Entity:
             }
             description = output['minecraft:client_entity']['description']
 
-            if self.__bp_data.is_spawnable():
+            if self.__bp_data.is_spawnable:
                 description['spawn_egg'] = self.define_spawn_egg(rp_path)
 
             # test to see if properties are filled and necessary to add to client entity
@@ -191,7 +191,7 @@ class Entity:
                 description['animation_controllers'] = self.__acs
 
             if self.__sounds is not None:
-                description['sounds'] = self.__sounds
+                description['sound_effects'] = self.__sounds
 
             if self.__particles is not None:
                 description['particles'] = self.__particles
@@ -220,7 +220,7 @@ class Entity:
         title = self.name.replace('_', ' ').title()
         translation = f'entity.{self.identifier}.name={title}\n'
         spawn_translation = f'item.spawn_egg.entity.{self.identifier}.name=Spawn {title}\n'
-        with open(lang_path, 'a') as lang_file:
+        with open(lang_path, 'a+') as lang_file:
             written_data = lang_file.readlines()
 
             if translation not in written_data:

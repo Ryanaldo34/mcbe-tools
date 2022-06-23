@@ -49,50 +49,49 @@ def create_item_defs(item_path: Path = typer.Argument(None, help='The path to th
         item_textures_folder: Path = rp_path.joinpath('textures', 'items')
         item_textures_file: Path = rp_path.joinpath('textures', 'item_texture.json')
         texts_file: Path = rp_path.joinpath('texts', 'en_US.lang')
-        lang_data: list = data_from_file(texts_file) if texts_file.exists() else []
-        
-        # basic items atlas
-        atlas: dict
-        if not item_textures_file.exists():
-            rp_name = data_from_file(rp_path.joinpath('manifest.json'))['header']['name']
-            atlas = {
-                'resource_pack_name': rp_name,
-                'texture_name': 'atlas.items',
-                "texture_data": {}
-            }
-        else:
-            atlas = data_from_file(item_textures_file)
 
-        if not item.is_attachable:
-            txtr_atlas = atlas['texture_data']
-            item_texture = item_textures_folder.joinpath(f'{item.name}.png')
-            txtr_atlas[item.name] = {}
-            txtr_atlas[item.name]['textures'] = str(item_texture)[str(item_texture).find('textures'):].replace(os.sep, '/').replace('.png', '')
-            lang_def = f'item.{item.identifier}.name={item.real_name}'
-            item_rp_data = {
-                    'format_version': '1.10.0',
-                    'minecraft:item': {
-                        'description': {
-                            'identifier': item.identifier,
-                            'category': category
-                        },
-                        'components': {
-                            'minecraft:icon': item.name,
-                            'minecraft:render_offsets': 'apple'
+        with open(texts_file, 'a+') as lang_data:
+            # basic items atlas
+            atlas: dict
+            if not item_textures_file.exists():
+                rp_name = data_from_file(rp_path.joinpath('manifest.json'))['header']['name']
+                atlas = {
+                    'resource_pack_name': rp_name,
+                    'texture_name': 'atlas.items',
+                    "texture_data": {}
+                }
+            else:
+                atlas = data_from_file(item_textures_file)
+
+            if not item.is_attachable:
+                txtr_atlas = atlas['texture_data']
+                item_texture = item_textures_folder.joinpath(f'{item.name}.png')
+                txtr_atlas[item.name] = {}
+                txtr_atlas[item.name]['textures'] = str(item_texture)[str(item_texture).find('textures'):].replace(os.sep, '/').replace('.png', '')
+                lang_def = f'item.{item.identifier}.name={item.real_name}\n'
+                item_rp_data = {
+                        'format_version': '1.10.0',
+                        'minecraft:item': {
+                            'description': {
+                                'identifier': item.identifier,
+                                'category': category if category is not None else 'Items'
+                            },
+                            'components': {
+                                'minecraft:icon': item.name,
+                                'minecraft:render_offsets': 'apple'
+                        }
                     }
                 }
-            }
-            if category is not None:
-                item_rp_data['minecraft:item']['components']['minecraft:use_animation'] = animation
+                if category is not None:
+                    item_rp_data['minecraft:item']['components']['minecraft:use_animation'] = animation
 
-            write_to_file(item_rp_folder.joinpath(f'{item.name}.item.json'), item_rp_data)
-            if lang_def not in lang_data: lang_data.append(lang_def)
-            write_to_file(texts_file, lang_data)
-            print(atlas)
-            write_to_file(item_textures_file, atlas)
-
-        else:
-            pass
+                write_to_file(item_rp_folder.joinpath(f'{item.name}.item.json'), item_rp_data)
+                if lang_def not in lang_data: lang_data.write(lang_def)
+                print(atlas)
+                write_to_file(item_textures_file, atlas)
+            # if the item is an attachable
+            else:
+                pass
 
     except KeyError as err:
         typer.Abort()

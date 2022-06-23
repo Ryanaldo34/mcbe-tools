@@ -1,4 +1,5 @@
 from addons.errors import BadDataInputExcep
+from addons.helpers.file_handling import write_to_file
 
 
 class EntityBehaviors:
@@ -33,7 +34,7 @@ class EntityBehaviors:
 
         :returns: a list of the lang definitions in "translation.key=Name Required" format
         """
-        with open(lang_file_path, 'a') as lang_file:
+        with open(lang_file_path, 'a+') as lang_file:
             lang_data = lang_file.readlines()
             ride_hint = f'action.hint.exit.{self.identifier}=Tap Sneak To Exit {self.__real_name}\n'
             components = self.__data.get('minecraft:entity').get('components')
@@ -50,5 +51,5 @@ class EntityBehaviors:
                     lang_file.write(ride_hint)
                     return lang_file.readlines()
 
-            return lang_data
+            return lang_file.readlines()
 
