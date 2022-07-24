@@ -106,6 +106,7 @@ def define( rp_folder: Path = typer.Argument(None),
     """
     entity_data = data_from_file(entity_file)
     behaviors = ce.behaviors.EntityBehaviors(entity_data)
+    geo_path = rp_folder.joinpath('models', 'entity', f'{entity_file.stem}.geo.json')
     
     if dummy:
         print('writing dummy ce file...')
@@ -117,7 +118,6 @@ def define( rp_folder: Path = typer.Argument(None),
 
     else:
         materials: dict = define_materials(default)
-        geo_path = rp_folder.joinpath('models', 'entity', f'{entity_file.stem}.geo.json')
         geo_data: dict = data_from_file(geo_path)
         
         if geo_data is None and GEO_ERRORS:
@@ -147,3 +147,22 @@ def generate(template: str, bp_path: str):
     Generate an entity's behavior file from a select template
     """
     pass
+
+@app.command()
+def add_sounds(
+    rp_path: Path = typer.Argument(default=None), 
+    entity_id: str = typer.Argument(default=None)
+):
+    if not rp_path.exists():
+        raise typer.BadParameter('The resource pack provided does not exist')
+
+    sounds_path = rp_path.joinpath('sounds', 'entity')
+    ce_path = rp_path.joinpath('entity', f'{entity_id}.entity.json')
+
+    if not ce_path.exists() or not rp_path.exists():
+        raise typer.BadParameter('You are missing one or more requirements in the resource pack!')
+
+    ce_data = data_from_file(ce_path)
+    ce_data['minecraft:client_entity']['description']['sound_effects'] = implement_sounds(entity_id, rp_path)
+    print(ce_data)
+    write_to_file(ce_path, ce_data)

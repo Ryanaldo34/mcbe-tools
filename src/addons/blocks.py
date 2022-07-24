@@ -35,13 +35,20 @@ def sounds(rp_path: Path = typer.Argument(None, help='Resource pack where block 
 @app.command()
 def define(behavior_file: Path = typer.Argument(None, help='The behavior file of the block'),
             rp_path: Path = typer.Argument(None, help='The path to the resource pack of this block'),
-            rp_name: str = typer.Argument(None, help='The name of the resource pack for this block'),
+            rp_name: str = typer.Argument('Resource Pack', help='The name of the resource pack for this block'),
             flipbook: bool = typer.Option(False, help='Whether this block is a flipbook texture')):
     """
     Defines the resources of a custom block
     """
+    if not behavior_file.exists():
+        raise typer.BadParameter('That block behavior file does not exist')
+
+    if not rp_path.exists():
+        raise typer.BadParameter('The resource pack does not exist!')
+
     terrain_textures = rp_path.joinpath('textures', 'terrain_texture.json')
     blocks_rp_file = rp_path.joinpath('blocks.json')
+    texts_file = rp_path.joinpath('texts', 'en_US.lang')
     terrain_texture_data: dict
     blocks_data: dict
     if terrain_textures.exists():
@@ -50,7 +57,7 @@ def define(behavior_file: Path = typer.Argument(None, help='The behavior file of
     else:
         terrain_texture_data = {
             'num_mip_levels' : 4,
-            'padding ': 8,
+            'texture_name': 'atlas.terrain',
             'resource_pack_name' : rp_name,
             'texture_data': {}
         }
@@ -66,7 +73,6 @@ def define(behavior_file: Path = typer.Argument(None, help='The behavior file of
     block = Block(data_from_file(behavior_file))
     terrain_texture_data['texture_data'][block.name] = {}
     block_textr_folder = rp_path.joinpath('textures', 'blocks', block.name)
-    block_texture = rp_path.joinpath('textures', 'blocks', f'{block.name}.png')
     blocks_data[block.identifier] = {}
     # if the block has more than 1 texture
     if block_textr_folder.exists():
@@ -80,11 +86,17 @@ def define(behavior_file: Path = typer.Argument(None, help='The behavior file of
 
     else:
         terrain_texture_data['texture_data'][block.name] = {}
-        terrain_texture_data['texture_data'][block.name]['textures'] = str(block_texture)
+        terrain_texture_data['texture_data'][block.name]['textures'] = f'textures/custom/blocks/{block.name}'
         blocks_data[block.identifier]['textures'] = block.name
 
-    blocks_data[block.identifier]['sound'] = block.name
+    if flipbook:
+        pass
+
+    blocks_data[block.identifier]['sound'] = 'stone'
 
     print(blocks_data, terrain_texture_data)
-    write_to_file(blocks_data, blocks_rp_file) # blocks.json
-    write_to_file(terrain_texture_data, terrain_textures) # terrain_texture.json
+    write_to_file(blocks_rp_file, blocks_data) # blocks.json
+    write_to_file(terrain_textures, terrain_texture_data) # terrain_texture.json
+
+    with open(texts_file, 'a') as texts:
+        texts.write(f'tile.{block.identifier}.name={block.real_name}\n')

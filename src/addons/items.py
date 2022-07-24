@@ -82,7 +82,7 @@ def create_item_defs(item_path: Path = typer.Argument(None, help='The path to th
                         }
                     }
                 }
-                if category is not None:
+                if animation is not None:
                     item_rp_data['minecraft:item']['components']['minecraft:use_animation'] = animation
 
                 write_to_file(item_rp_folder.joinpath(f'{item.name}.item.json'), item_rp_data)
