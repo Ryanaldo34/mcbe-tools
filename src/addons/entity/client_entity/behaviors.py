@@ -1,20 +1,21 @@
+from pathlib import Path
 from addons.errors import BadDataInputExcep
 from addons.helpers.file_handling import write_to_file
-
+from typing import Any
+from addons.custom.component import component_registry
 
 class EntityBehaviors:
-
     def __init__(self, bp_data: dict):
-        self.__data: dict = bp_data
+        self.__data: dict[str, dict[str, Any]] = bp_data
         self.__id: str = self.__data.get('minecraft:entity').get('description').get('identifier')
         self.__real_name: str = self.__id.split(':')[-1]
 
     @property
-    def data(self):
+    def data(self) -> dict[str, dict[str, Any]]:
         return self.__data
 
     @property
-    def identifier(self):
+    def identifier(self) -> str:
         if self.__id is not None:
             return self.__id
         else:
@@ -26,7 +27,32 @@ class EntityBehaviors:
 
     @property
     def is_spawnable(self) -> bool:
+        self.__data.get('minecraft:entity').get('description').get('is_spawnable')
         return self.__data.get('minecraft:entity').get('description').get('is_spawnable')
+
+    def build(self, build_path: Path) -> None:
+        """
+        Builds out the custom components in the file
+        
+        :param build_path: The path to the entity's behavior file
+        """
+        cgs: dict[str, Any] | None = self.__data['minecraft:entity'].get('component_groups')
+        if cgs is not None:
+            for name, group in cgs.items():
+                for k in list(group):
+                    if k.startswith(component_registry.namespace):
+                        passed_properties = self.__data.pop(k)
+                        component = component_registry.get_component(k.split(':')[-1])
+                        root = self.__data['minecraft:entity']['component_groups'][name]
+                        component.build_self(root=root, properties=passed_properties)
+        components: dict[str, Any] = self.__data['minecraft:entity']['components']
+        for k in list(components):
+            if k.startswith(component_registry.namespace):
+                passed_properties = self.__data.pop(k)
+                component = component_registry.get_component(k.split(':')[-1])
+                component.build_self(root=components, properties=passed_properties)
+
+        write_to_file(build_path, self.__data)
 
     def write_lang_defs(self, lang_file_path: str) -> list[str]:
         """
@@ -52,4 +78,3 @@ class EntityBehaviors:
                     return lang_file.readlines()
 
             return lang_file.readlines()
-

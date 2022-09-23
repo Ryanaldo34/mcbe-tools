@@ -237,7 +237,7 @@ class Entity:
         :param overlay_color: A hex code of the color to be used as an overlay for the egg
         :param texture: The texture short name to be used as the spawn egg texture
         """
-        spawn_egg_texture = rp_path.joinpath('textures', 'items', f'{self.name}')
+        spawn_egg_texture = rp_path.joinpath('textures', 'items', f'{self.name}.png')
         spawn_egg = {}
 
         if spawn_egg_texture.exists():
