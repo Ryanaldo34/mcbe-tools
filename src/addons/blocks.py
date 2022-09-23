@@ -25,6 +25,9 @@ class Block:
     def real_name(self):
         return self.identifier.replace('_', ' ').title()
 
+    def define_properties(self, path: Path):
+        pass
+
 @app.command()
 def sounds(rp_path: Path = typer.Argument(None, help='Resource pack where block sounds are being defined')):
     """
@@ -36,7 +39,8 @@ def sounds(rp_path: Path = typer.Argument(None, help='Resource pack where block 
 def define(behavior_file: Path = typer.Argument(None, help='The behavior file of the block'),
             rp_path: Path = typer.Argument(None, help='The path to the resource pack of this block'),
             rp_name: str = typer.Argument('Resource Pack', help='The name of the resource pack for this block'),
-            flipbook: bool = typer.Option(False, help='Whether this block is a flipbook texture')):
+            flipbook: bool = typer.Option(False, help='Whether this block is a flipbook texture'),
+            variation: bool = typer.Option(False, help='If the block has multiple textures that variate')):
     """
     Defines the resources of a custom block
     """
@@ -76,13 +80,22 @@ def define(behavior_file: Path = typer.Argument(None, help='The behavior file of
     blocks_data[block.identifier] = {}
     # if the block has more than 1 texture
     if block_textr_folder.exists():
-        blocks_data[block.identifier]['textures'] = {}
         block_textures = [ str(textr)[textr.find('textures'):].replace(os.sep, '/').replace('.png', '') for textr in block_textr_folder.rglob('*.png') ]
-        for textr in block_textures:
-            short_name = textr.split('_')[-1]
-            terrain_texture_data['texture_data'][short_name] = {}
-            terrain_texture_data['texture_data'][textr]['textures'] = textr
-            blocks_data[block.identifier]['textures'][short_name] = textr
+        if variation:
+            terrain_texture_data['texture_data'][block.name] = {}
+            terrain_texture_data['texture_data'][block.name]['textures'] = {}
+            terrain_texture_data['texture_data'][block.name]['textures']['variations']: list[dict] = []
+            for textr in block_textures:
+                weight = int(input(f'What is the weight for the texture {textr}?: '))
+                terrain_texture_data['texture_data'][block.name]['textures']['variations'].append({'path': textr, 'weight': weight})
+
+        else:
+            blocks_data[block.identifier]['textures'] = {}
+            for textr in block_textures:
+                short_name = textr.split('_')[-1]
+                terrain_texture_data['texture_data'][short_name] = {}
+                terrain_texture_data['texture_data'][textr]['textures'] = textr
+                blocks_data[block.identifier]['textures'][short_name] = textr
 
     else:
         terrain_texture_data['texture_data'][block.name] = {}
@@ -92,7 +105,7 @@ def define(behavior_file: Path = typer.Argument(None, help='The behavior file of
     if flipbook:
         pass
 
-    blocks_data[block.identifier]['sound'] = 'stone'
+    blocks_data[block.identifier]['sound'] = block.name
 
     print(blocks_data, terrain_texture_data)
     write_to_file(blocks_rp_file, blocks_data) # blocks.json

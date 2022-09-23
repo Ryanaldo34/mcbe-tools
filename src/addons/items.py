@@ -35,10 +35,12 @@ def category_callback(value: str):
         raise typer.BadParameter('The category given is not valid!')
 
 @app.command('define')
-def create_item_defs(item_path: Path = typer.Argument(None, help='The path to the item behavior file'), 
-                    rp_path: Path = typer.Argument(None, help='The path to the resource pack'),
-                    animation: str = typer.Option(None, callback=use_anim_callback, help='The animation played when the item is being used'),
-                    category: str = typer.Option('Items', callback=category_callback, help='The creative category of the item')):
+def create_item_defs(
+    item_path: Path = typer.Argument(None, help='The path to the item behavior file'), 
+    rp_path: Path = typer.Argument(None, help='The path to the resource pack'),
+    category: str = typer.Argument('Items', callback=category_callback, help='The creative category of the item'),
+    animation: str = typer.Argument(None, callback=use_anim_callback, help='The animation played when used')
+    ):
     """Defines an item"""
     try:
         item_data: dict = data_from_file(item_path)

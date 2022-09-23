@@ -7,13 +7,13 @@ def createDefs(RP_PATH: Path, category_path: Path, definition_data: dict, catego
     """
     Creates the sound definitions for a given category path
     """
-    if not category_path.is_dir():
-        print('There are not entity sounds available')
+    if not category_path.exists():
+        print('There are not sounds available')
         return None
 
     def_file = RP_PATH.joinpath('sounds', 'sound_definitions.json')
     sounds: list[str] = [str(sound) for sound in category_path.glob('*') if sound.is_file()] # free floating sounds in the sounds folder
-    subcategories: list[Path] = [subcat for subcat in category_path.glob('*') if subcat.is_dir()] # sub-folders in the sounds folder
+    subcategories: list[Path] = [subcat for subcat in category_path.glob('*') if subcat.is_dir()] # sub-folders in the sounds folder (entity folders)
     definitions = definition_data['sound_definitions']
 
     for sound in sounds: # if there are sounds just floating in the sounds folder without a sub folder
@@ -38,17 +38,17 @@ def createDefs(RP_PATH: Path, category_path: Path, definition_data: dict, catego
             definitions[sound_name]['sounds'] = []
             definitions[sound_name]['sounds'].append(sound_path)
 
-        sub_subcategories: list[Path] = [subcat for subcat in Path(subcategory).glob('*') if subcat.is_dir()]
+        sub_subcategories: list[Path] = [subcat for subcat in category_path.joinpath(subcategory).glob('*') if subcat.is_dir()]
         for sub_subcat in sub_subcategories:
             sound_paths = [str(sound)[str(sound).find('sounds'):].replace(os.sep, '/').replace('.ogg', '') for sound in sub_subcat.rglob('*.ogg')]
-            sub_subcat = str(sub_subcat).split(os.sep)[-2]
-            sound_name = '{0}.{1}.{2}'.format(category, subcategory, sub_subcat)
+            sub_subcat = str(sub_subcat).split(os.sep)[-1]
+            sound_name = '{0}.{1}.{2}'.format(sound_category, subcategory, sub_subcat)
             definitions[sound_name] = {}
             definitions[sound_name]['category'] = category
             definitions[sound_name]['sounds'] = sound_paths
     # create the sound_definitions.json
     write_to_file(def_file, definition_data)
-    pprint.pprint(definitions)
+    pprint.pprint(definition_data)
     return definition_data
 
 def define_block_sounds(rp_path: Path, namespace: str):
@@ -107,6 +107,7 @@ def implement_sounds(entity: str, rp_path: Path) -> dict:
 
     if sounds_path.exists():
         sound_defs = data_from_file(sounds_path)
+        sound_defs = createDefs(rp_path, rp_path.joinpath('sounds', 'entity'), sound_defs)
 
     else:
         sound_defs = {
@@ -114,7 +115,6 @@ def implement_sounds(entity: str, rp_path: Path) -> dict:
             'sound_definitions': {}
         }
         sound_defs = createDefs(rp_path, rp_path.joinpath('sounds', 'entity'), sound_defs)
-
 
     ce_sound_map = {}
     for sound in sound_defs['sound_definitions'].keys():
