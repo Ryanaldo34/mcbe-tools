@@ -1,7 +1,7 @@
 import os, typer, json
 import addons.entity.client_entity as ce
 from addons.sounds import implement_sounds
-from addons.helpers.file_handling import *
+from addons.helpers.file_handling import write_to_file, data_from_file
 from pathlib import Path
 from addons.errors import *
 
