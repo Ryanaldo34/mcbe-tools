@@ -1,9 +1,9 @@
 import os
-from configparser import RawConfigParser
+from configparser import RawConfigParser, NoSectionError
 
 config = RawConfigParser()
-path = os.path.join(os.path.split(__file__)[0], 'config.cfg')
-config.read('config.cfg')
+path = os.path.join(os.path.dirname(__file__), '..', 'config.cfg')
+config.read(path)
 
 PROJECTS = config.get('paths', 'projects')
 MODELS = { option: os.path.join(*val.split('/')) for option, val in config['paths'].items() if 'models' in val }

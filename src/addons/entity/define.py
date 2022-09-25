@@ -98,23 +98,29 @@ def define_textures(entity: Entity, rp_folder: Path):
 @app.command()
 def define( rp_folder: Path = typer.Argument(None),
             entity_file: Path = typer.Argument(None),
+            geo: str = typer.Option('', help='Specify a geometry for the entity'),
             default: bool = typer.Option(True, help='Whether the entity has a default rc'),
             dummy: bool = typer.Option(False, help='If the entity is a dummy')
     ) -> None:
     """
     Writes the client entity and render controller files of an entity
     """
+    if not entity_file.exists():
+        raise typer.BadParameter('The entity file provided DNE', param=entity_file)
+    if not rp_folder.exists():
+        raise typer.BadParamater('The resource pack provided DNE', param=rp_folder)
+
     entity_data = data_from_file(entity_file)
     behaviors = ce.behaviors.EntityBehaviors(entity_data)
-    geo_path = rp_folder.joinpath('models', 'entity', f'{entity_file.stem}.geo.json')
+    behaviors.build(entity_file)
+    geo_path = rp_folder.joinpath('models', 'entity', f'{entity_file.stem}.geo.json') if not geo else rp_folder.joinpath('models', 'entity', f'{geo}.geo.json')
     
     if dummy:
-        print('writing dummy ce file...')
         geo_object = ce.geo.Geometry(data_from_file(geo_path), dummy=True)
         materials = { 'default': 'entity_alphatest' }
         entity = Entity(materials, geo_object, behaviors)
 
-        json.dumps(entity.write_client_entity(rp_folder, dummy=True), indent=4, sort_keys=True)
+        print(json.dumps(entity.write_client_entity(rp_folder, dummy=True), indent=4, sort_keys=True))
 
     else:
         materials: dict = define_materials(default)
@@ -142,7 +148,7 @@ def define( rp_folder: Path = typer.Argument(None),
         entity.write_lang(rp_folder)
 
 @app.command()
-def generate(template: str, bp_path: str):
+def generate(template: str, entity_name: str, bp_path: Path):
     """
     Generate an entity's behavior file from a select template
     """
@@ -159,10 +165,9 @@ def add_sounds(
     sounds_path = rp_path.joinpath('sounds', 'entity')
     ce_path = rp_path.joinpath('entity', f'{entity_id}.entity.json')
 
-    if not ce_path.exists() or not rp_path.exists():
+    if not ce_path.exists() or not sounds_path.exists():
         raise typer.BadParameter('You are missing one or more requirements in the resource pack!')
 
     ce_data = data_from_file(ce_path)
     ce_data['minecraft:client_entity']['description']['sound_effects'] = implement_sounds(entity_id, rp_path)
-    print(ce_data)
     write_to_file(ce_path, ce_data)
