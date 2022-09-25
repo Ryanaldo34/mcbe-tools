@@ -42,11 +42,11 @@ def write_to_file(path: Path, data: Union[dict[str, str], list[str]], writing: b
     if not isinstance(path, Path):
         path = Path(path)
 
-    valid_files = ['.json', '.lang', '.txt', '.mcmeta']
+    valid_files = ['.json', '.lang', '.txt']
     if path.suffix not in valid_files:
         raise InvalidArgError(path, write_to_file)
 
-    if path.suffix == '.json' or path.suffix == '.mcmeta':
+    if path.suffix == '.json':
         if writing:
             with path.open('w') as f:
                 json.dump(data, f, indent = 4, sort_keys=True)
