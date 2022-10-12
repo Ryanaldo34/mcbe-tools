@@ -1,15 +1,16 @@
 import typer
-import addons.entity.client_entity as ce
+import addons.entity.client_entity as client_entity
 from addons.sounds import implement_sounds
 from addons.helpers.file_handling import write_to_file, data_from_file
 from addons.entity.client_entity.factory import ClientEntityFactory
 from addons.entity.client_entity.versions import ClientEntityV1_8_0, ClientEntityV1_10_0
+from addons.entity.behaviors import EntityBehaviors
 from pathlib import Path
 from addons.errors import *
 from colorama import Fore, Back, Style
 
-Entity = ce.entity.Entity
-RenderController = ce.render_controller.RenderController
+Entity = client_entity.entity.Entity
+RenderController = client_entity.render_controller.RenderController
 app = typer.Typer()
 
 @app.command()
@@ -47,12 +48,12 @@ def define( rp_folder: Path = typer.Argument(None, help='ABS path to the resourc
 
         name = entity_file.stem
         entity_data = data_from_file(entity_file)
-        behaviors = ce.behaviors.EntityBehaviors(entity_data)
+        behaviors = EntityBehaviors(entity_data)
         behaviors.build(entity_file)
         geo_path = rp_folder.joinpath('models', 'entity', f'{name}.geo.json') if not geo else rp_folder.joinpath('models', 'entity', f'{geo}.geo.json')
         
         if dummy:
-            geo_object = ce.geo.Geometry(data_from_file(geo_path), dummy=True)
+            geo_object = client_entity.geo.Geometry(data_from_file(geo_path), dummy=True)
             materials = { 'default': 'entity_alphatest' }
             entity = Entity(materials, geo_object, behaviors)
             name = entity.name.replace('_', ' ').title()

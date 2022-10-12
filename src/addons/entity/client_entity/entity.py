@@ -177,7 +177,7 @@ class Entity:
                 textr = textr[pos:].replace('.png', '').replace(os.sep, '/')
                 textures[i] = textr
             short_name_val_map = { textr.split('/')[-1].split('_')[-1]: textr for textr in textures }
-            
+
             return short_name_val_map
             
         else:
@@ -210,17 +210,6 @@ class Entity:
 
             assert len(indexes) > 0, 'The texture index list needs to be at least 1!'
             return indexes
-
-    def add_rc(self, render_controller: str) -> None:
-        """
-        Adds a render controller name to the entity's render controller list
-
-        :param render_controller: the render controller name being added
-        """
-        self.__render_controllers.append(render_controller)
-
-    def write_client_entity(self, rp_path: Path, dummy=False) -> dict:
-        ...
 
     def write_lang(self, RP_PATH: Path) -> None:
         """
