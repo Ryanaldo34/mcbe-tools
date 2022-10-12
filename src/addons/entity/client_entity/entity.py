@@ -1,53 +1,90 @@
 from pathlib import Path
-from .behaviors import EntityBehaviors
+from addons.entity.behaviors import EntityBehaviors
 from addons.helpers.file_handling import data_from_file, write_to_file
 from .geo import Geometry
+from addons.errors import *
 
 class Entity:
     """ 
     Used to encapsulate and handle data relating to an entity definition
     """
-
-    def __init__(self, materials: dict, geometry: Geometry, bp_data: EntityBehaviors):
+    def __init__(self, materials: dict[str, str],
+                geometry: Geometry, 
+                bp_data: EntityBehaviors, 
+                rp_path: Path, *,
+                anim_req: bool = False,
+                ac_req: bool = False,
+                texture_req: bool = False):
         """
         :param materials: the short-name: value map of materials for the entity gathered from user input
         :param bp_data: the encapsulated data from the entity's behavior fiile
         """
         self.identifier = bp_data.identifier
         self.name = bp_data.real_name
-        self.__materials: dict = materials
+        self.__materials: dict[str, str] = materials
         self.__bp_data: EntityBehaviors = bp_data
         self.__material_names: list[str] = [f'Material.{x}' for x in list(self.__materials)]
         self.__geo_name_val_map: dict = geometry.get_geos()
         self.__geo_names: list[str] = geometry.get_names()
-        self.__spawn_egg: dict = None
-        self.__textr_name_val_map: dict = None
-        self.__textr_names: list[str] = None
-        self.__textr_paths: list[str] = None
-        self.__anims: dict = None
-        self.__acs: list[dict] = None
+        self.__bones = geometry.get_bones()
+        self.__spawn_egg: dict = self._define_spawn_egg(rp_path)
+        self.__textr_name_val_map: dict[str, str] = self._define_textures(rp_path, texture_req)
+        self.__textr_names: list[str] = [f'Texture.{short_name}' for short_name in list(self.__textr_name_val_map)] if self.__textr_name_val_map is not None else None
+        self.__textr_paths: list[str] = list(self.__textr_name_val_map.values()) if self.__textr_name_val_map is not None else None
+        self.__anims: dict[str, str] = self._define_animations(rp_path, anim_req)
+        self.__acs: list[dict] = self._define_animation_controllers(rp_path, ac_req)
         self.__particles: dict = None
         self.__sounds: dict = None
         self.__locators: dict = geometry.get_locators()
         self.__render_controllers: list[str] = [] # not required for dummy entities so that is why this is here, should otherwise always be filled
 
     @property
+    def acs(self) -> list[dict[str, str]]:
+        return self.__acs
+
+    @property
+    def anims(self) -> dict[str, str]:
+        return self.__anims
+
+    @property
+    def behaviors(self) -> EntityBehaviors:
+        return self.__bp_data
+
+    @property
+    def textr_paths(self) -> list[str]:
+        return self.__textr_paths
+
+    @property
+    def bones(self) -> list[str]:
+        return self.__bones
+
+    @property
     def geo_names(self) -> list[str]:
         return self.__geo_names
+
+    @property
+    def geometries(self) -> dict[str, str]:
+        return self.__geo_name_val_map
+
+    @property
+    def locators(self) -> dict:
+        return self.__locators
+
+    @property
+    def materials(self) -> dict:
+        return self.__materials
 
     @property
     def material_names(self) -> list[str]:
         return self.__material_names
 
     @property
-    def textr_name_val_map(self):
-        raise AttributeError('Texture Name-Value Map is write-only')
+    def particles(self) -> dict[str, str]:
+        return self.__particles
 
-    @textr_name_val_map.setter
-    def textr_name_val_map(self, map: dict):
-        if type(map) != dict and map is not None:
-            raise ValueError('The Texture Short-name: Value map must be a dictionary!')
-        self.__textr_name_val_map = map
+    @property
+    def textures(self) -> dict[str, str]:
+        return self.__textr_name_val_map
 
     @property
     def textr_names(self) -> list[str]:
@@ -60,16 +97,6 @@ class Entity:
         self.__textr_names = names
 
     @property
-    def textr_paths(self) -> list[str]:
-        return self.__textr_paths
-
-    @textr_paths.setter
-    def textr_paths(self, paths: list[str]):
-        if type(paths) != list and paths is not None:
-            raise ValueError('The Texture Paths List needs to be a list!')
-        self.__textr_paths = paths
-
-    @property
     def sounds(self) -> dict:
         return self.__sounds
 
@@ -80,34 +107,87 @@ class Entity:
         self.__sounds = sounds_dict
 
     @property
-    def particles(self) -> dict:
-        return self.__particles
+    def spawn_egg(self) -> dict:
+        return self.__spawn_egg
 
-    @particles.setter
-    def particles(self, values: dict):
-        if type(values) != dict and values is not None:
-            raise ValueError('The Particles Short-name: Value map needs to be a dictionary!')
-        self.__particles = values
+    @staticmethod
+    def define_materials(default: bool) -> dict[str, str]:
+        """Defines the shortname: value pairs for materials in the client entity file
+        
+        :param materials: the string gathered from user input
+        """
+        if not default:
+            materials = input('Enter the names of materials to be used in the entity (use space to separate): ').split(' ')
+            material_names = []
+            for material in materials:
+                name = input(f'what is the short-name of the material -> {material}: ')
+                material_names.append(name)
 
-    @property
-    def anims(self):
-        raise AttributeError('Animations are write-only')
+            return { name: value for name, value in zip(material_names, materials) }
+        else:
+            return {'default': 'entity_alphatest'}
 
-    @anims.setter
-    def anims(self, anims_dict: dict):
-        if type(anims_dict) != dict and anims_dict is not None:
-            raise ValueError('The Animations Short-name: Value map needs to be a dictionary!')
-        self.__anims = anims_dict
+    def _define_animations(self, rp_folder: Path, anim_errors: bool = False) -> dict[str, str] | None:
+        """
+        Gets the animation file path and interprets the data from the file to encapsulate it in the entity object
+        
+        :param rp_folder: the resource pack folder location
+        :param entity: the entity being defined
+        """
+        anim_file = rp_folder.joinpath('animations', f'{self.name}.animation.json')
+        anim_data = data_from_file(anim_file)
 
-    @property
-    def acs(self):
-        raise AttributeError('Animation Controllers are write-only')
+        if anim_file.is_file():
+            self.__anims = { animation.split('.')[-1]: animation for animation in list(anim_data['animations']) }
 
-    @acs.setter
-    def acs(self, acs_dict: dict):
-        if type(acs_dict) != list and acs_dict is not None:
-            raise ValueError('The Animation Controllers Short-name: Value map needs to be a dictionary!')
-        self.__acs = acs_dict
+        else:
+            if anim_errors: raise MissingAnimationError('The entity is missing a required animation file!')
+
+    def _define_animation_controllers(self, rp_folder: Path, ac_errors: bool = False) -> list[dict[str, str]] | None:
+        """ 
+        Gets the animation controller file path and interprets data from the file to encapsulate it in the entity object
+
+        :param rp_folder: the resource pack folder location
+        :param entity: the entity being defined
+        """
+        ac_file = rp_folder.joinpath('animation_controllers', f'{self.name}.animation_controllers.json')
+
+        if ac_file.is_file():
+            ac_data = data_from_file(ac_file)
+            return [ {controller.split('.')[-1]: controller} for controller in list(ac_data['animation_controllers']) ]
+
+        else:
+            if ac_errors: raise MissingAnimationControllerFile('The entity has a required animation controller that is missing!')
+
+    def _define_textures(self, rp_folder: Path, texture_errors: bool = True) -> dict[str, str] | None:
+        """ 
+        Gets the texture folder or texture file path and formats the paths into aceptable data for MC and encapsulates it in the entity object
+        
+        :param rp_folder: the resource pack folder location
+        :param working_file: the dir where the script is running
+        :param entity: the entity being defined
+        """
+        entity_textr_folder = rp_folder.joinpath('textures', 'entity', self.name)
+        entity_textr_file = rp_folder.joinpath('textures', 'entity', f'{self.name}.png')
+
+        if entity_textr_folder.exists():
+            textures = [str(textr) for textr in entity_textr_folder.rglob('*.png')]
+            for i, textr in enumerate(textures):
+                pos = textr.find('textures')
+                textr = textr[pos:].replace('.png', '').replace(os.sep, '/')
+                textures[i] = textr
+            short_name_val_map = { textr.split('/')[-1].split('_')[-1]: textr for textr in textures }
+            
+            return short_name_val_map
+            
+        else:
+            if entity_textr_file.exists():
+                return {'default': f'textures/entity/{self.name}'}
+
+            else:
+                if texture_errors: raise MissingTextureError('The entity is missing a required texture file')
+                    
+                return None
 
     def get_textr_indexes(self, arrays: dict) -> list:
         """
@@ -140,75 +220,7 @@ class Entity:
         self.__render_controllers.append(render_controller)
 
     def write_client_entity(self, rp_path: Path, dummy=False) -> dict:
-        """
-        Uses encapsulated data to complete the data used for writing the client entity file and returns it
-
-        :param entity_folder: the path to the rp/entity folder in the entity's resource pack
-        :returns: the data to be written to the client entity file
-        """
-        entity_folder = rp_path.joinpath('entity')
-        file_name = '{0}.entity.json'.format(self.name)
-        file_path = entity_folder.joinpath(file_name)
-
-        if dummy:
-            output = {
-                'format_version': '1.8.0',
-                'minecraft:client_entity': {
-                    'description': {
-                        'identifier': self.identifier,
-                        'materials': { 'default': 'entity_alphatest' },
-                        'geometry': { 'default': 'geometry.dummy' }
-                    }
-                }   
-            }
-            write_to_file(file_path, output)
-            return output
-            
-        else: 
-            output = {
-                'format_version': '1.8.0',
-                'minecraft:client_entity': {
-                    'description': {
-                        'identifier': self.identifier,
-                        'materials': self.__materials,
-                        'geometry': self.__geo_name_val_map
-                    }
-                }   
-            }
-            description = output['minecraft:client_entity']['description']
-
-            if self.__bp_data.is_spawnable:
-                description['spawn_egg'] = self.define_spawn_egg(rp_path)
-
-            # test to see if properties are filled and necessary to add to client entity
-            if self.__textr_name_val_map is not None:
-                description['textures'] = self.__textr_name_val_map
-
-            if self.__anims is not None:
-                description['animations'] = self.__anims
-
-            if self.__acs is not None:
-                description['animation_controllers'] = self.__acs
-
-            if self.__sounds is not None:
-                description['sound_effects'] = self.__sounds
-
-            if self.__particles is not None:
-                description['particles'] = self.__particles
-
-            if self.__locators is not None:
-                description['locators'] = self.__locators
-
-            if len(self.__render_controllers) > 0:
-                description['render_controllers'] = self.__render_controllers
-
-            if self.__spawn_egg is not None:
-                description['spawn_egg'] = self.__spawn_egg
-
-            print('Writing to the client entity file right now!')
-            write_to_file(file_path, output, writing=True)
-
-            return output
+        ...
 
     def write_lang(self, RP_PATH: Path) -> None:
         """

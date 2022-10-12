@@ -1,4 +1,4 @@
-import configparser
+from colorama import Fore, Back, Style
 from typing import Callable
 from configparser import NoSectionError, RawConfigParser
 import os

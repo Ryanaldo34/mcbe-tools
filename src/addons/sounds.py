@@ -48,7 +48,6 @@ def createDefs(RP_PATH: Path, category_path: Path, definition_data: dict, catego
             definitions[sound_name]['sounds'] = sound_paths
     # create the sound_definitions.json
     write_to_file(def_file, definition_data)
-    pprint.pprint(definition_data)
     return definition_data
 
 def define_block_sounds(rp_path: Path, namespace: str):

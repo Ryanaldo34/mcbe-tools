@@ -5,19 +5,22 @@ import re
 
 class RenderController:
 
-    def __init__(self, linked_entity: Entity, name: str, bones: list):
+    def __init__(self, linked_entity: Entity, name: str):
 
         self.__linked_entity = linked_entity
         self.__name = name
-        self.__bones = bones
+        self.__bones = linked_entity.bones
         self.__texture_names = linked_entity.textr_names
         self.__textr_paths = linked_entity.textr_paths
         self.__geo_names = linked_entity.geo_names
         self.__material_names = linked_entity.material_names
         self.__mat_to_bone_map = []
         self.__arrays = self.__make_arrays()
-        print(self.__arrays)
         self.__textr_arr_indexes = linked_entity.get_textr_indexes(self.__arrays)
+
+    @property
+    def name(self) -> str:
+        return self.__name
 
     def __make_arrays(self) -> dict:
         arrays = {}
@@ -61,7 +64,6 @@ class RenderController:
 
     def map_mats_to_bones(self) -> list[dict[str, str]]:
         mat_names = self.__material_names
-        bones = self.__bones
         # if there are multiple materials defined
         if len(mat_names) > 1:
             for name in mat_names:
