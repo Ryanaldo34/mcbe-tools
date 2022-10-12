@@ -48,7 +48,7 @@ class ClientEntityV1_8_0(ClientEntityBase):
             description = output['minecraft:client_entity']['description']
 
             # test to see if properties are filled and necessary to add to client entity
-            if self.__entity.textr_name_val_map is not None:
+            if self.__entity.textures is not None:
                 description['textures'] = self.__entity.textures
 
             if self.__entity.anims is not None:
@@ -85,7 +85,33 @@ class ClientEntityV1_10_0(ClientEntityBase):
         self.__render_controllers = []
 
     def write_file(self, rp_path: Path, dummy=False) -> None:
-        pass
+        file_name = '{0}.entity.json'.format(self.__entity.name)
+        file_path = rp_path.joinpath('entity', file_name)
+
+        if dummy:
+            output = {
+                'format_version': '1.10.0',
+                'minecraft:client_entity': {
+                    'description': {
+                        'identifier': self.__entity.identifier,
+                        'materials': { 'default': 'entity_alphatest' },
+                        'geometry': { 'default': 'geometry.dummy' }
+                    }
+                }   
+            }
+            write_to_file(file_path, output, writing=True)
+            return None
+
+        output = {
+                'format_version': '1.10.0',
+                'minecraft:client_entity': {
+                    'description': {
+                        'identifier': self.__entity.identifier,
+                        'materials': self.__entity.materials,
+                        'geometry': self.__entity.geometries
+                    }
+                }   
+            }
 
     def add_rc(self, render_controller: RenderController, condition: str = None) -> None:
         if condition is None:

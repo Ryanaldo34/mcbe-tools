@@ -230,7 +230,7 @@ class Entity:
 
         self.__bp_data.write_lang_defs(lang_path)
 
-    def define_spawn_egg(self, rp_path: Path, base_color: str = None, overlay_color: str = None) -> dict:
+    def _define_spawn_egg(self, rp_path: Path, base_color: str = None, overlay_color: str = None) -> dict:
         """
         Creates the spawn egg dictionary to be added to the client entity file of an entity
 

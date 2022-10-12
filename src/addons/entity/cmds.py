@@ -42,7 +42,7 @@ def define( rp_folder: Path = typer.Argument(None, help='ABS path to the resourc
             raise typer.BadParameter('The entity file provided DNE', param=entity_file)
         if not rp_folder.exists():
             raise typer.BadParameter('The resource pack provided DNE', param=rp_folder)
-        if not fv in valid_formats():
+        if not fv in valid_formats:
             print(f'{fv}, is not a valid client entity format version!')
             raise typer.Abort()
 
@@ -68,7 +68,7 @@ def define( rp_folder: Path = typer.Argument(None, help='ABS path to the resourc
             if geo_data is None and GEO_ERRORS:
                 raise MissingGeometryError('The entity is missing a required geometry definition!')
 
-            geo_object = ce.geo.Geometry(geo_data, dummy=False)
+            geo_object = client_entity.geo.Geometry(geo_data, dummy=False)
             entity = Entity(materials, geo_object, behaviors, rp_path=rp_folder, anim_req=anim_req, ac_req=ac_req, texture_req=texture_req)
             # client entity
             ce = ce_builder.create(fv, entity)

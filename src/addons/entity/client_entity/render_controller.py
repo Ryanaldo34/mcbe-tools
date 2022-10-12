@@ -102,6 +102,5 @@ class RenderController:
         file_path = rc_path.joinpath(file_name)
 
         write_to_file(file_path, output, writing=True)
-        self.__linked_entity.add_rc(self.__name)
 
         return output
