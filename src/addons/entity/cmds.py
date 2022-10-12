@@ -60,32 +60,35 @@ def define( rp_folder: Path = typer.Argument(None, help='ABS path to the resourc
             # client entityy
             ce = ce_builder.create(fv, entity)
             ce.write_file(rp_folder, dummy=True)
+            return None
 
+        materials = Entity.define_materials(default)
+        geo_data = data_from_file(geo_path)
+        
+        if geo_data is None and GEO_ERRORS:
+            raise MissingGeometryError('The entity is missing a required geometry definition!')
+
+        geo_object = client_entity.geo.Geometry(geo_data, dummy=False)
+        entity = Entity(materials, geo_object, behaviors, rp_path=rp_folder, anim_req=anim_req, ac_req=ac_req, texture_req=texture_req)
+        # client entity
+        ce = ce_builder.create(fv, entity)
+        name = entity.name.replace('_', ' ').title()
+        # particles & sounds defined
+        entity.sounds = implement_sounds(entity.name, rp_folder)
+        # create render controller
+        if entity.has_default_rc:
+            ce.add_rc('controller.render.default')
         else:
-            materials = Entity.define_materials(default)
-            geo_data = data_from_file(geo_path)
-            
-            if geo_data is None and GEO_ERRORS:
-                raise MissingGeometryError('The entity is missing a required geometry definition!')
-
-            geo_object = client_entity.geo.Geometry(geo_data, dummy=False)
-            entity = Entity(materials, geo_object, behaviors, rp_path=rp_folder, anim_req=anim_req, ac_req=ac_req, texture_req=texture_req)
-            # client entity
-            ce = ce_builder.create(fv, entity)
-            name = entity.name.replace('_', ' ').title()
-            # particles & sounds defined
-            entity.sounds = implement_sounds(entity.name, rp_folder)
-            # create render controller, no need for one if it is a dummy
             render_controller = RenderController(entity, f'controller.render.{entity.name}')
             render_controller.map_mats_to_bones()
             # write render controller
             render_controller.convert_to_file(rp_folder.joinpath('render_controllers'))
             ce.add_rc(render_controller)
-            # write the client_entity file
-            ce.write_file(rp_folder, dummy=False)
-            entity.write_lang(rp_folder)
-            # log to console
-            print(f'{Fore.GREEN}Successfully Defined {name}!')
+        # write the client_entity file
+        ce.write_file(rp_folder, dummy=False)
+        entity.write_lang(rp_folder)
+        # log to console
+        print(f'{Fore.GREEN}Successfully Defined {name}!')
         print(Style.RESET_ALL)
 
     except MissingAnimationControllerFile:

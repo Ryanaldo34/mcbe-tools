@@ -51,6 +51,10 @@ class Entity:
         return self.__bp_data
 
     @property
+    def has_default_rc(self) -> bool:
+        return len(self.__material_names) < 2 and len(self.__textr_names) < 2 and len(self.__geo_names) < 2
+
+    @property
     def textr_paths(self) -> list[str]:
         return self.__textr_paths
 
