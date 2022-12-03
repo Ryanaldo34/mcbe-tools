@@ -8,10 +8,10 @@ class Component(CustomComponent):
     width: float
     speed: float
 
-    @property
-    def name(self) -> str:
+    @staticmethod
+    def get_name() -> str:
         return 'basics'
-
+        
     @verify_component_properties
     def build_self(self, *, root: dict[str, Any], properties: dict[str, Any]) -> None:
         root['minecraft:physics'] = {}

@@ -12,8 +12,14 @@ bp_folders = ['animation_controllers', 'animations', 'blocks', 'features', 'func
 rp_folders = ['animation_controllers', 'animations', 'items', 'entity', 'models', 'particles', 'render_controllers', *paths.MODELS.values(), *paths.SOUNDS.values(), *paths.TEXTURES.values()]
 app = typer.Typer()
 
+def package_skinpack():
+    pass
+
 @app.command()
-def create(project_name: str) -> None:
+def create(
+    project_name: str,
+    gt: bool=typer.Option(default=False, help="Whether this is gametest enabled")
+) -> None:
     """ Creates a new blank project template in the user's dedicated project folder
     
     """
@@ -67,7 +73,13 @@ def create(project_name: str) -> None:
     write_to_file(project_path.joinpath(rp_name, 'textures', 'flipbook_textures.json'), data=[], writing=True)
 
 @app.command()
-def package(project_name: str, project_description: str, assets_zip_folder: str) -> None:
+def package(
+    project_name: str,
+    project_description: str,
+    assets_zip_folder: Path,
+    world_folder_path: Path,
+    skinpack: bool=typer.Option(default=False, help='Whether this package has a skinpack')
+) -> None:
     """
     Packages a world for marketplace submission
 
@@ -75,96 +87,87 @@ def package(project_name: str, project_description: str, assets_zip_folder: str)
     :param project_description: the description to be used in game for the world template
     :param assets_zip_folder: the path to the zip folder 
     """
-    search_name = project_name.lower().replace(' ', '_')
-    world_folder_path = r'%LocalAppData%\Packages\Microsoft.MinecraftUWP_8wekyb3d8bbwe\LocalState\games\com.mojang\minecraftWorlds\{0}'.format(search_name)
-
-    if not os.path.exists(world_folder_path) or not os.path.exists(assets_zip_folder):
+    if not world_folder_path.exists() or not assets_zip_folder.exists():
         raise FileNotFoundError('A folder for the world being packaged does not exist or the assets folder provided is invalid!')
 
     else:
-        package_path = os.path.join(package_path, search_name)
-        world_template = os.path.join(package_path, 'Content', 'world_template')
-        template_texts = os.path.join(world_template, 'texts')
+        package_parents = ['Content', 'Marketing Art', 'Store Art']
+        package_path = assets_zip_folder.parent.joinpath(project_name)
+        package_path.mkdir()
+        for prnt in package_parents:
+            path = package_path.joinpath(prnt)
+            path.mkdir()
+        world_template = package_path.joinpath('Content', 'world_template')
+        template_texts = world_template.joinpath('texts')
         texts = [f'pack.name={project_name}', f'pack.description{project_description}']
-        os.mkdirs(template_texts)
+        os.makedirs(str(template_texts), exist_ok=True)
         bad_files = ['level.dat_old', 'world_behavior_pack_history.json', 'world_resource_pack_history.json']
 
         for el in os.listdir(world_folder_path):
             if os.path.isdir(el):
-                shutil.copytree(os.path.join(world_folder_path, el), world_template)
+                shutil.copytree(world_folder_path.joinpath(el), world_template)
             
             else:
                 if el not in bad_files:
-                    shutil.copy(os.path.join(world_folder_path, el), world_template)
+                    shutil.copy(world_folder_path.joinpath(el), world_template)
 
         manifest: dict = data['world_template_manifest']
         for k, v in manifest.items():
-            if type(v) == list:
+            if isinstance(v, list):
                 for el in v:
-                    if type(el) == dict:
-                        if 'uuid' in el:
-                            manifest[k]['uuid'] = str(uuid.uuid4())
-                    else:
-                        continue
-            else:
-                if type(v) == dict:
-                    if 'uuid' in v:
+                    if not isinstance(el, dict): continue
+                    if 'uuid' in el:
                         manifest[k]['uuid'] = str(uuid.uuid4())
-                else:
-                    continue
+            else:
+                if not isinstance(v, dict): continue
+                if 'uuid' in v:
+                    manifest[k]['uuid'] = str(uuid.uuid4())
             if k == 'uuid':
                 manifest['uuid'] = str(uuid.uuid4())
-
             else:
                 continue
 
-        write_to_file(os.path.join(world_template, 'manifest.json'), manifest, writing=True)
-        write_to_file(os.path.join(template_texts, 'languages.json'), languages, writing=True)
-        write_to_file(os.path.join(template_texts, 'en_US.lang'), texts, writing=True) # world template folder completed
+        write_to_file(world_template.joinpath('manifest.json'), manifest, writing=True)
+        write_to_file(template_texts.joinpath('languages.json'), languages, writing=True)
+        write_to_file(template_texts.joinpath('en_US.lang'), texts, writing=True) # world template folder completed
         
-        marketing_art = os.path.join(package_path, 'Marketing Art')
-        store_art = os.path.join(package_path, 'Store Art')
-        temp_path = os.path.join(package_path, 'temp')
-        os.mkdir(marketing_art)
-        os.mkdir(store_art)
+        marketing_art = package_path.joinpath('Marketing Art')
+        store_art = package_path.joinpath('Store Art')
+        temp_path = package_path.joinpath('temp')
 
         with ZipFile(assets_zip_folder, 'r') as assets:
-            os.mkdir(os.path.join(package_path, 'temp'))
-            assets.extractall(temp_path)
+            temp_path.mkdir()
+            assets.extractall(str(temp_path))
 
-        for file_name in os.listdir(os.path.join(package_path, 'temp')):
-            file_num : int = 0
+        project_file_name = project_name.replace(' ', '').lower()
+        for i, file_name in enumerate(os.listdir(str(temp_path))):
             if 'panorama' not in file_name and 'keyart' not in file_name and 'partnerart' not in file_name:
                 # marketing art
-                marketing_name : str = os.path.join(temp_path,'{0}_MarketingScreenshot_{1}.jpg'.format(project_name.replace(' ', '').lower(), file_num))
-                curr_file_path: str = os.path.join(temp_path, file_name)
-                os.rename(curr_file_path, marketing_name)
+                marketing_name = temp_path.joinpath(f'{project_file_name}_MarketingScreenshot_{i}.jpg')
+                curr_file_path = temp_path.joinpath(file_name)
+                curr_file_path.rename(marketing_name)
                 shutil.copy(marketing_name, marketing_art)
                 # store art
-                store_name: str = os.path.join(store_art, '{0}_screenshot_{1}.jpg'.format(project_name.replace(' ', '').lower() , file_num))
+                store_name = store_art.joinpath(f'{project_file_name}_screenshot_{i}.jpg')
                 store_img = Image.open(marketing_name)
                 store_img.resize((800, 450))
                 store_img.save(store_name) # save the resized image to the store art folder with its correct name
                 store_img.close()
-                file_num += 1
             else:
-                curr_file_path: str = os.path.join(temp_path, file_name)
+                curr_file_path = temp_path.joinpath(file_name)
                 if 'panorama' in file_name:
                     panorama_file = os.path.join(temp_path, file_name)
-                    new_panorama_name = '{0}_panorama_0.jpg'.format(project_name.replace(' ', '').lower())
-                    new_panorama_file = os.path.join(store_art, new_panorama_name)
+                    new_panorama_name = f'{project_file_name}_panorama_0.jpg'
+                    new_panorama_file = store_art.joinpath(new_panorama_name)
                     shutil.move(panorama_file, new_panorama_file) # format the file with the projectname_panorama.jpg format
-                elif 'keyart' in file_name:
+                if 'keyart' in file_name:
                     thumbnail = Image.open(curr_file_path)
                     thumbnail.resize((800, 450))
-                    thumbnail.save(os.path.join(store_art, '{0}_Thumbnail_0.jpg'.format(project_name.replace(' ', '').lower() )))
+                    thumbnail.save(store_art.joinpath(f'{project_file_name}_Thumbnail_0.jpg'))
                     thumbnail.close()
-                    marketing_keyart: str = '{0}_MarketingKeyArt.jpg'.format(project_name.replace(' ', '').lower())
-                    shutil.move(curr_file_path, os.path.join(marketing_art, marketing_keyart))
+                    marketing_keyart = f'{project_file_name}_MarketingKeyArt.jpg'
+                    shutil.move(curr_file_path, marketing_art.joinpath(marketing_keyart))
+                if 'partnerart' in file_name:
+                    shutil.move(curr_file_path, marketing_art.joinpath(f'{project_file_name}_PartnerArt.jpg'))
 
-                elif 'partnerart' in file_name:
-                    shutil.move(curr_file_path, os.path.join(marketing_art, '{0}_PartnerArt.jpg'.format(project_name.replace(' ', '').lower() )))
-                else:
-                    continue
-
-        shutil.rmtree(temp_path)
+        shutil.rmtree(str(temp_path))

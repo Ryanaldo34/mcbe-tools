@@ -1,4 +1,3 @@
-print(__file__)
 from . import blocks
 from . import errors
 from . import items
