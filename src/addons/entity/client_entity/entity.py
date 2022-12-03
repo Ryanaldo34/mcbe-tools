@@ -4,6 +4,9 @@ from addons.helpers.file_handling import data_from_file, write_to_file
 from .geo import Geometry
 from addons.errors import *
 
+class EntityProperties:
+    ...
+
 class Entity:
     """ 
     Used to encapsulate and handle data relating to an entity definition
@@ -36,7 +39,6 @@ class Entity:
         self.__particles: dict = None
         self.__sounds: dict = None
         self.__locators: dict = geometry.get_locators()
-        self.__render_controllers: list[str] = [] # not required for dummy entities so that is why this is here, should otherwise always be filled
 
     @property
     def acs(self) -> list[dict[str, str]]:

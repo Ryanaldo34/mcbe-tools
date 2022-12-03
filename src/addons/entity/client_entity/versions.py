@@ -1,13 +1,15 @@
-from abc import ABC
+from abc import ABC, abstractmethod
 from pathlib import Path
 from .entity import Entity
 from addons.helpers.file_handling import *
 from .render_controller import RenderController
 
 class ClientEntityBase(ABC):
+    @abstractmethod
     def write_file(self, rp_path: Path, dummy=False) -> None:
         ...
-
+        
+    @abstractmethod
     def add_rc(self, render_controller: RenderController | str, condition: str = None) -> None:
         ...
 
@@ -100,14 +102,14 @@ class ClientEntityV1_10_0(ClientEntityBase):
             return None
 
         output = {
-                'format_version': '1.10.0',
-                'minecraft:client_entity': {
-                    'description': {
-                        'identifier': self.__entity.identifier,
-                        'materials': self.__entity.materials,
-                        'geometry': self.__entity.geometries
-                    }
-                }   
+            'format_version': '1.10.0',
+            'minecraft:client_entity': {
+                'description': {
+                    'identifier': self.__entity.identifier,
+                    'materials': self.__entity.materials,
+                    'geometry': self.__entity.geometries
+                }
+            }   
         }
         description = output['minecraft:client_entity']['description']
         if self.__entity.textures is not None:

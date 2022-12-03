@@ -2,7 +2,7 @@ from pathlib import Path
 from addons.errors import BadDataInputExcep
 from addons.helpers.file_handling import write_to_file
 from typing import Any
-from addons.custom.component import component_registry
+from addons.custom.component import component_registry, CustomComponent
 
 class EntityBehaviors:
     def __init__(self, bp_data: dict):
@@ -48,8 +48,9 @@ class EntityBehaviors:
         components: dict[str, Any] = self.__data['minecraft:entity']['components']
         for k in list(components):
             if k.startswith(component_registry.namespace):
-                passed_properties = self.__data.pop(k)
-                component = component_registry.get_component(k.split(':')[-1])
+                passed_properties = self.__data['minecraft:entity']['components'].pop(k)
+                Component = component_registry.get_component(k.split(':')[-1])
+                component: CustomComponent = Component() # returns the component class corresponding to the component name
                 component.build_self(root=components, properties=passed_properties)
 
         write_to_file(build_path, self.__data)

@@ -5,16 +5,16 @@ from addons.errors import CustomComponentExistsError, ComponentPropertyTypeError
 import importlib, os
 
 class CustomComponent(ABC):
-    @property
+    @staticmethod
     @abstractmethod
-    def name(self) -> str:
-        """Returns the specific name of this component"""
-        pass
+    def get_name() -> str:
+        ...
+
     @abstractmethod
     def build_self(self, *, root: dict[str, Any], properties: dict[str, Any]) -> None:
         """When the project is built, a behavior file is parsed and any instances of this custom component are compiledd"""
         # set variable properties in the data as the key of the properties
-        pass
+        ...
 
 @dataclass(frozen=True)
 class CustomComponentRegistry:
@@ -23,7 +23,7 @@ class CustomComponentRegistry:
 
     def __register_component(self, component: CustomComponent) -> None:
         """Adds a custom component object to the registry"""
-        self._data[component.name] = CustomComponent
+        self._data[component.get_name()] = component
 
     def register_components(self) -> None:
         """Loops through and dyanmically loads custom components to the registry"""
@@ -45,6 +45,7 @@ class CustomComponentRegistry:
         """Returns a custom component object from the registry"""
         component: CustomComponent = self._data.get(component_name)
         if component is None:
+            print(self._data)
             raise CustomComponentExistsError(component_name)
 
         return component
@@ -61,14 +62,14 @@ def verify_component_properties(builder: Callable):
                 default = getattr(ref, prop, None)
 
                 if default is None: # if the required property was not declared and doesn't have a default value
-                    raise BadDataInputExcep(f'{prop} is not allowed in the component: {ref.name}!')
+                    raise BadDataInputExcep(f'{prop} is a required field in the component: {ref.name} and no value was provided!')
                 else:
                     passed_properties[prop] = default
 
             if not isinstance(passed_properties[prop], expected_type):
                 raise ComponentPropertyTypeError(prop, type(passed_property), expected_type)
 
-        builder(*args, **kwargs)
+        builder(ref, *args, **kwargs)
 
     return wrapper
         
