@@ -3,6 +3,7 @@ from addons.errors import BadDataInputExcep
 from addons.helpers.file_handling import write_to_file
 from typing import Any
 from addons.custom.component import component_registry, CustomComponent
+from addons.entity.properties import EntityProperties
 
 class EntityBehaviors:
     def __init__(self, bp_data: dict):
@@ -29,6 +30,15 @@ class EntityBehaviors:
     def is_spawnable(self) -> bool:
         self.__data.get('minecraft:entity').get('description').get('is_spawnable')
         return self.__data.get('minecraft:entity').get('description').get('is_spawnable')
+
+    def add_property(self, property: EntityProperties):
+        name = property.get_name()
+        data = property.build_self()
+        if self.__data['minecraft:entity']['description'].get('properties') is not None:
+            self.__data['minecraft:entity']['description']['properties'][name] = data
+        else:
+            self.__data['minecraft:entity']['description']['properties'] = {}
+            self.__data['minecraft:entity']['description']['properties'][name] = data
 
     def build(self, build_path: Path) -> None:
         """

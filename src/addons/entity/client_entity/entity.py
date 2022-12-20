@@ -4,9 +4,6 @@ from addons.helpers.file_handling import data_from_file, write_to_file
 from .geo import Geometry
 from addons.errors import *
 
-class EntityProperties:
-    ...
-
 class Entity:
     """ 
     Used to encapsulate and handle data relating to an entity definition
@@ -117,21 +114,19 @@ class Entity:
         return self.__spawn_egg
 
     @staticmethod
-    def define_materials(default: bool) -> dict[str, str]:
+    def define_materials(materials: list[str]) -> dict[str, str]:
         """Defines the shortname: value pairs for materials in the client entity file
         
         :param materials: the string gathered from user input
         """
-        if not default:
-            materials = input('Enter the names of materials to be used in the entity (use space to separate): ').split(' ')
-            material_names = []
-            for material in materials:
-                name = input(f'what is the short-name of the material -> {material}: ')
-                material_names.append(name)
-
-            return { name: value for name, value in zip(material_names, materials) }
-        else:
+        if not materials:
             return {'default': 'entity_alphatest'}
+
+        material_names = []
+        for material in materials:
+            name = input(f'what is the short-name of the material -> {material}: ')
+            material_names.append(name)
+        return { name: value for name, value in zip(material_names, materials) }
 
     def _define_animations(self, rp_folder: Path, anim_errors: bool = False) -> dict[str, str] | None:
         """
@@ -141,10 +136,10 @@ class Entity:
         :param entity: the entity being defined
         """
         anim_file = rp_folder.joinpath('animations', f'{self.name}.animation.json')
-        anim_data = data_from_file(anim_file)
 
         if anim_file.is_file():
-            self.__anims = { animation.split('.')[-1]: animation for animation in list(anim_data['animations']) }
+            anim_data = data_from_file(anim_file)
+            return { animation.split('.')[-1]: animation for animation in list(anim_data['animations']) }
 
         else:
             if anim_errors: raise MissingAnimationError('The entity is missing a required animation file!')
@@ -194,28 +189,6 @@ class Entity:
                 if texture_errors: raise MissingTextureError('The entity is missing a required texture file')
                     
                 return None
-
-    def get_textr_indexes(self, arrays: dict) -> list:
-        """
-        Prompts the user for the indexing function of each texture array in the render controller
-
-        :param arrays: the arrays dictionary from the entity's render controller
-        :returns: a list of indexes to be used in the entity's render controller
-        """
-        if len(arrays) == 0 or 'textures' not in arrays:
-            return [ 'Texture.default' ]
-
-        else:
-            textr_arrs = arrays['textures'].keys()
-            indexes = []
-
-            for array in textr_arrs:
-                value = input('What is the indexing function for the array {0}?: '.format(array))
-                value = f'{array}[{value}]'
-                indexes.append(value)
-
-            assert len(indexes) > 0, 'The texture index list needs to be at least 1!'
-            return indexes
 
     def write_lang(self, RP_PATH: Path) -> None:
         """

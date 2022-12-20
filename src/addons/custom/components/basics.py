@@ -2,7 +2,7 @@ from addons.custom.component import CustomComponent, verify_component_properties
 from typing import Any
 
 class Component(CustomComponent):
-    families: list[str]
+    families: list
     health: int
     height: float
     width: float

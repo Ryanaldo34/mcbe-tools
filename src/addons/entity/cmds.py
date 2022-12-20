@@ -5,12 +5,15 @@ from addons.helpers.file_handling import write_to_file, data_from_file
 from addons.entity.client_entity.factory import ClientEntityFactory
 from addons.entity.client_entity.versions import ClientEntityV1_8_0, ClientEntityV1_10_0
 from addons.entity.behaviors import EntityBehaviors
+from addons.entity.builder import build_entity, build_arrays
+from addons.entity.client_entity.render_controller import RenderController
+from addons.entity.client_entity.entity import Entity
+
 from pathlib import Path
 from addons.errors import *
 from colorama import Fore, Back, Style
+from typing import Optional
 
-Entity = client_entity.entity.Entity
-RenderController = client_entity.render_controller.RenderController
 app = typer.Typer()
 
 @app.command()
@@ -20,6 +23,7 @@ def define( rp_folder: Path = typer.Argument(None, help='ABS path to the resourc
             anim: str = typer.Option('', help='Specify name of the animation file for the entity'),
             ac: str = typer.Option('', help='Specify name of animation controller file for the entity'),
             geo: str = typer.Option('', help='Specify a geometry for the entity'),
+            material: Optional[list[str]] = typer.Option(None, help='Add a material to the entity'),
             texture: str = typer.Option('', help='Specify the texture name of an entity'),
             default: bool = typer.Option(True, help='Whether the entity has a default rc'),
             dummy: bool = typer.Option(False, help='If the entity is a dummy'),
@@ -49,7 +53,6 @@ def define( rp_folder: Path = typer.Argument(None, help='ABS path to the resourc
         name = entity_file.stem
         entity_data = data_from_file(entity_file)
         behaviors = EntityBehaviors(entity_data)
-        behaviors.build(entity_file)
         geo_path = rp_folder.joinpath('models', 'entity', f'{name}.geo.json') if not geo else rp_folder.joinpath('models', 'entity', f'{geo}.geo.json')
         
         if dummy:
@@ -62,7 +65,7 @@ def define( rp_folder: Path = typer.Argument(None, help='ABS path to the resourc
             ce.write_file(rp_folder, dummy=True)
             return None
 
-        materials = Entity.define_materials(default)
+        materials = Entity.define_materials(material)
         geo_data = data_from_file(geo_path)
         
         if geo_data is None and GEO_ERRORS:
@@ -78,8 +81,11 @@ def define( rp_folder: Path = typer.Argument(None, help='ABS path to the resourc
         # create render controller
         if entity.has_default_rc:
             ce.add_rc('controller.render.default')
+            build_entity(entity_file, None, behaviors)
         else:
-            render_controller = RenderController(entity, f'controller.render.{entity.name}')
+            arrays = build_arrays(entity, rp_folder)
+            render_controller = RenderController(f'controller.render.{entity.name}', arrays, materials)
+            build_entity(entity_file, render_controller, behaviors)
             render_controller.map_mats_to_bones()
             # write render controller
             render_controller.convert_to_file(rp_folder.joinpath('render_controllers'))

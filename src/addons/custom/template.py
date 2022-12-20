@@ -107,12 +107,15 @@ class CustomTemplateRegistry:
         """
         templates = [os.path.split(template)[-1].replace('.py', '') for template in os.listdir(os.path.join('addons', 'custom', 'templates')) if '__init__' not in template]
         for template in templates:
-            module = import_module(f'addons.custom.templates.{template}')
-            if hasattr(module, 'template'):
-                data: Template = getattr(module, 'template')
-                self._data[data.name] = data
-            else:
-                raise AttributeError('A template must be defined correctly')
+            try:
+                module = import_module(f'addons.custom.templates.{template}')
+                if hasattr(module, 'template'):
+                    data: Template = getattr(module, 'template')
+                    self._data[data.name] = data
+                else:
+                    raise AttributeError('A template must be defined correctly')
+            except AttributeError:
+                print(f'Template not found: {template}')
 
 template_registry = CustomTemplateRegistry()
 template_registry.register_templates()
