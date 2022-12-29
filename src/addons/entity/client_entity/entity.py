@@ -2,39 +2,40 @@ from pathlib import Path
 from addons.entity.behaviors import EntityBehaviors
 from addons.helpers.file_handling import data_from_file, write_to_file
 from .geo import Geometry
-from addons.errors import *
 
 class Entity:
     """ 
     Used to encapsulate and handle data relating to an entity definition
     """
-    def __init__(self, materials: dict[str, str],
-                geometry: Geometry, 
-                bp_data: EntityBehaviors, 
-                rp_path: Path, *,
-                anim_req: bool = False,
-                ac_req: bool = False,
-                texture_req: bool = False):
-        """
-        :param materials: the short-name: value map of materials for the entity gathered from user input
-        :param bp_data: the encapsulated data from the entity's behavior fiile
-        """
+    def __init__(self,
+                materials: dict[str, str],
+                geometry: Geometry,
+                bp_data: EntityBehaviors,
+                *,
+                textures: dict[str, str] = None,
+                acs: dict[str, str] = None,
+                anims: dict[str, str] = None,
+                sounds: dict[str, str] = None,
+                particles: dict[str, str] = None,
+                spawn_egg = {
+                    'texture': 'spawn_egg',
+                    'texture_index': 0
+                }
+        ):
         self.identifier = bp_data.identifier
         self.name = bp_data.real_name
         self.__materials: dict[str, str] = materials
         self.__bp_data: EntityBehaviors = bp_data
         self.__material_names: list[str] = [f'Material.{x}' for x in list(self.__materials)]
-        self.__geo_name_val_map: dict = geometry.get_geos()
+        self.__geo_name_val_map: dict[str, str] = geometry.get_geos()
         self.__geo_names: list[str] = geometry.get_names()
         self.__bones = geometry.get_bones()
-        self.__spawn_egg: dict = self._define_spawn_egg(rp_path)
-        self.__textr_name_val_map: dict[str, str] = self._define_textures(rp_path, texture_req)
-        self.__textr_names: list[str] = [f'Texture.{short_name}' for short_name in list(self.__textr_name_val_map)] if self.__textr_name_val_map is not None else None
-        self.__textr_paths: list[str] = list(self.__textr_name_val_map.values()) if self.__textr_name_val_map is not None else None
-        self.__anims: dict[str, str] = self._define_animations(rp_path, anim_req)
-        self.__acs: list[dict] = self._define_animation_controllers(rp_path, ac_req)
-        self.__particles: dict = None
-        self.__sounds: dict = None
+        self.__spawn_egg: dict = spawn_egg
+        self.__textr_name_val_map: dict[str, str] = textures
+        self.__anims: dict[str, str] = anims
+        self.__acs: list[dict[str, str]] = acs
+        self.__particles: dict[str, str] = particles
+        self.__sounds: dict[str, str] = sounds
         self.__locators: dict = geometry.get_locators()
 
     @property
@@ -51,11 +52,13 @@ class Entity:
 
     @property
     def has_default_rc(self) -> bool:
-        return len(self.__material_names) < 2 and len(self.__textr_names) < 2 and len(self.__geo_names) < 2
+        return all(x < 2 for x in [len(self.__material_names), len(self.__textr_name_val_map, len(self.geo_names))])
 
     @property
     def textr_paths(self) -> list[str]:
-        return self.__textr_paths
+        if self.__textr_name_val_map is None:
+            return None
+        return list(self.__textr_name_val_map.values())
 
     @property
     def bones(self) -> list[str]:
@@ -91,16 +94,12 @@ class Entity:
 
     @property
     def textr_names(self) -> list[str]:
-        return self.__textr_names
-
-    @textr_names.setter
-    def textr_names(self, names: list[str]):
-        if type(names) != list and names is not None:
-            raise ValueError('The Texture Names List needs to be a list!')
-        self.__textr_names = names
+        if self.__textr_name_val_map is None:
+            return None
+        return [f'Texture.{short_name}' for short_name in list(self.__textr_name_val_map)]
 
     @property
-    def sounds(self) -> dict:
+    def sounds(self) -> dict[str, str]:
         return self.__sounds
 
     @sounds.setter
@@ -112,83 +111,6 @@ class Entity:
     @property
     def spawn_egg(self) -> dict:
         return self.__spawn_egg
-
-    @staticmethod
-    def define_materials(materials: list[str]) -> dict[str, str]:
-        """Defines the shortname: value pairs for materials in the client entity file
-        
-        :param materials: the string gathered from user input
-        """
-        if not materials:
-            return {'default': 'entity_alphatest'}
-
-        material_names = []
-        for material in materials:
-            name = input(f'what is the short-name of the material -> {material}: ')
-            material_names.append(name)
-        return { name: value for name, value in zip(material_names, materials) }
-
-    def _define_animations(self, rp_folder: Path, anim_errors: bool = False) -> dict[str, str] | None:
-        """
-        Gets the animation file path and interprets the data from the file to encapsulate it in the entity object
-        
-        :param rp_folder: the resource pack folder location
-        :param entity: the entity being defined
-        """
-        anim_file = rp_folder.joinpath('animations', f'{self.name}.animation.json')
-
-        if anim_file.is_file():
-            anim_data = data_from_file(anim_file)
-            return { animation.split('.')[-1]: animation for animation in list(anim_data['animations']) }
-
-        else:
-            if anim_errors: raise MissingAnimationError('The entity is missing a required animation file!')
-
-    def _define_animation_controllers(self, rp_folder: Path, ac_errors: bool = False) -> list[dict[str, str]] | None:
-        """ 
-        Gets the animation controller file path and interprets data from the file to encapsulate it in the entity object
-
-        :param rp_folder: the resource pack folder location
-        :param entity: the entity being defined
-        """
-        ac_file = rp_folder.joinpath('animation_controllers', f'{self.name}.animation_controllers.json')
-
-        if ac_file.is_file():
-            ac_data = data_from_file(ac_file)
-            return [ {controller.split('.')[-1]: controller} for controller in list(ac_data['animation_controllers']) ]
-
-        else:
-            if ac_errors: raise MissingAnimationControllerFile('The entity has a required animation controller that is missing!')
-
-    def _define_textures(self, rp_folder: Path, texture_errors: bool = True) -> dict[str, str] | None:
-        """ 
-        Gets the texture folder or texture file path and formats the paths into aceptable data for MC and encapsulates it in the entity object
-        
-        :param rp_folder: the resource pack folder location
-        :param working_file: the dir where the script is running
-        :param entity: the entity being defined
-        """
-        entity_textr_folder = rp_folder.joinpath('textures', 'entity', self.name)
-        entity_textr_file = rp_folder.joinpath('textures', 'entity', f'{self.name}.png')
-
-        if entity_textr_folder.exists():
-            textures = [str(textr) for textr in entity_textr_folder.rglob('*.png')]
-            for i, textr in enumerate(textures):
-                pos = textr.find('textures')
-                textr = textr[pos:].replace('.png', '').replace(os.sep, '/')
-                textures[i] = textr
-            short_name_val_map = { textr.split('/')[-1].split('_')[-1]: textr for textr in textures }
-
-            return short_name_val_map
-            
-        else:
-            if entity_textr_file.exists():
-                return {'default': f'textures/entity/{self.name}'}
-
-            else:
-                if texture_errors: raise MissingTextureError('The entity is missing a required texture file')
-                    
-                return None
 
     def write_lang(self, RP_PATH: Path) -> None:
         """

@@ -8,6 +8,7 @@ from addons.entity.behaviors import EntityBehaviors
 from addons.entity.builder import build_entity, build_arrays
 from addons.entity.client_entity.render_controller import RenderController
 from addons.entity.client_entity.entity import Entity
+from .define import *
 
 from pathlib import Path
 from addons.errors import *
@@ -20,16 +21,15 @@ app = typer.Typer()
 def define( rp_folder: Path = typer.Argument(None, help='ABS path to the resource pack'),
             entity_file: Path = typer.Argument(None, help='ABS path to the entity behavior file'),
             fv: str = typer.Option('1.8.0', help='The format version of the client entity'),
-            anim: str = typer.Option('', help='Specify name of the animation file for the entity'),
-            ac: str = typer.Option('', help='Specify name of animation controller file for the entity'),
-            geo: str = typer.Option('', help='Specify a geometry for the entity'),
+            anim: Path = typer.Option('', help='Specify name of the animation file for the entity'),
+            ac: Path = typer.Option('', help='Specify name of animation controller file for the entity'),
+            geo: Path = typer.Option('', help='Specify a geometry for the entity'),
             material: Optional[list[str]] = typer.Option(None, help='Add a material to the entity'),
-            texture: str = typer.Option('', help='Specify the texture name of an entity'),
-            default: bool = typer.Option(True, help='Whether the entity has a default rc'),
+            texture: Path = typer.Option(None, help='Specify the texture name of an entity'),
             dummy: bool = typer.Option(False, help='If the entity is a dummy'),
             ac_req: bool = typer.Option(False, help='If an ac is required'),
             anim_req: bool = typer.Option(False, help='If an animation is required'),
-            sounds: bool = typer.Option(False, help='If the entity need sounds'),
+            sounds_req: bool = typer.Option(False, help='If the entity need sounds'),
             texture_req: bool = typer.Option(True, help='If the entity requires a texture')
     ) -> None:
     """
@@ -46,14 +46,20 @@ def define( rp_folder: Path = typer.Argument(None, help='ABS path to the resourc
             raise typer.BadParameter('The entity file provided DNE', param=entity_file)
         if not rp_folder.exists():
             raise typer.BadParameter('The resource pack provided DNE', param=rp_folder)
-        if not fv in valid_formats:
+        if fv not in valid_formats:
             print(f'{fv}, is not a valid client entity format version!')
             raise typer.Abort()
 
-        name = entity_file.stem
         entity_data = data_from_file(entity_file)
         behaviors = EntityBehaviors(entity_data)
+        name = behaviors.real_name
         geo_path = rp_folder.joinpath('models', 'entity', f'{name}.geo.json') if not geo else rp_folder.joinpath('models', 'entity', f'{geo}.geo.json')
+        anim_file = anim if anim else rp_folder.joinpath('animations', f'{name}.animation.json')
+        ac_file = ac if ac else rp_folder.joinpath('animation_controllers', f'{name}.animation_controllers.json')
+        texture_path = texture
+        if not texture_path:
+            file = rp_folder.joinpath('textures', 'entity', f'{name}.png')
+            texture_path = file if file.exists() else rp_folder.joinpath('textures', 'entity', name)
         
         if dummy:
             geo_object = client_entity.geo.Geometry(data_from_file(geo_path), dummy=True)
@@ -65,19 +71,32 @@ def define( rp_folder: Path = typer.Argument(None, help='ABS path to the resourc
             ce.write_file(rp_folder, dummy=True)
             return None
 
-        materials = Entity.define_materials(material)
         geo_data = data_from_file(geo_path)
         
         if geo_data is None and GEO_ERRORS:
             raise MissingGeometryError('The entity is missing a required geometry definition!')
-
+        # define all the short_name: value dictionaries for the entity
+        materials = define_materials(material)
+        textures_dict = define_textures(texture_path, req=texture_req)
+        anim_dict = define_animations(anim_file, req=anim_req)
+        ac_dict = define_acs(ac_file, req=ac_req)
         geo_object = client_entity.geo.Geometry(geo_data, dummy=False)
-        entity = Entity(materials, geo_object, behaviors, rp_path=rp_folder, anim_req=anim_req, ac_req=ac_req, texture_req=texture_req)
+        sounds = implement_sounds(name, rp_folder)
+        spawn_egg = define_spawn_egg(name, rp_folder)
+        # create the entity object
+        entity = Entity(
+            materials,
+            geo_object,
+            behaviors,
+            textures=textures_dict,
+            anims=anim_dict,
+            acs=ac_dict,
+            spawn_egg=spawn_egg,
+            sounds=sounds
+        )
         # client entity
         ce = ce_builder.create(fv, entity)
         name = entity.name.replace('_', ' ').title()
-        # particles & sounds defined
-        entity.sounds = implement_sounds(entity.name, rp_folder)
         # create render controller
         if entity.has_default_rc:
             ce.add_rc('controller.render.default')
@@ -97,30 +116,30 @@ def define( rp_folder: Path = typer.Argument(None, help='ABS path to the resourc
         print(f'{Fore.GREEN}Successfully Defined {name}!')
         print(Style.RESET_ALL)
 
-    except MissingAnimationControllerFile:
+    except MissingAnimationControllerFile as exc:
         print(f'{Back.BLACK}{Style.BRIGHT}{Fore.RED}FATAL ERROR:\n', f'{Back.RESET}', f'The entity in {entity_file} could not be defined due to a missing animation controller requirement!', Style.RESET_ALL)
         print(f'{Style.DIM}{Fore.YELLOW}Troubleshooting:\n', '+Is the file named entity_name.animation_controllers.json?\n', '+Is the the file saved in RP/animation_controllers', Style.RESET_ALL)
-        raise typer.Abort()
+        raise typer.Abort() from exc
 
-    except MissingAnimationError:
+    except MissingAnimationError as exc:
         print(f'{Back.BLACK}{Style.BRIGHT}{Fore.RED}FATAL ERROR:\n', f'{Back.RESET}', f'The entity in {entity_file} could not be defined due to a missing animation requirement!', Style.RESET_ALL)
         print(f'{Style.DIM}{Fore.YELLOW}Troubleshooting:\n', '+Is the file named entity_name.animation.json?\n', '+Is the the file saved in RP/animations?', Style.RESET_ALL)
-        raise typer.Abort()
+        raise typer.Abort() from exc
 
-    except MissingGeometryError:
+    except MissingGeometryError as exc:
         print(f'{Back.BLACK}{Style.BRIGHT}{Fore.RED}FATAL ERROR:\n', f'{Back.RESET}', f'The entity in {entity_file} could not be defined due to a missing a geometry definition (model)!', Style.RESET_ALL)
         print(f'{Style.DIM}{Fore.YELLOW}Troubleshooting:\n', '+Is the file named entity_name.geo.json?\n', '+Is the the file saved in RP/models/entity', Style.RESET_ALL)
-        raise typer.Abort()
+        raise typer.Abort() from exc
 
-    except MissingSoundError:
+    except MissingSoundError as exc:
         print(f'{Back.BLACK}{Style.BRIGHT}{Fore.RED}FATAL ERROR:\n', f'{Back.RESET}', f'The entity in {entity_file} could not be defined due to a missing sound effects requirement!', Style.RESET_ALL)
         print(f'{Style.DIM}{Fore.YELLOW}Troubleshooting:\n', '+Is the entity sound folder in RP/sounds?\n', Style.RESET_ALL)
-        raise typer.Abort()
+        raise typer.Abort() from exc
         
-    except MissingTextureError:
+    except MissingTextureError as exc:
         print(f'{Back.BLACK}{Style.BRIGHT}{Fore.RED}FATAL ERROR:\n', f'{Back.RESET}', f'The entity in {entity_file} could not be defined due to a missing texture file!', Style.RESET_ALL)
         print(f'{Style.DIM}{Fore.YELLOW}Troubleshooting:\n', '+Is the file named entity_name.png?\n', '+Is the the file saved in RP/textures/entity or RP/textures/entity/entity_name?', Style.RESET_ALL)
-        raise typer.Abort()
+        raise typer.Abort() from exc
 
 @app.command()
 def add_sounds(
