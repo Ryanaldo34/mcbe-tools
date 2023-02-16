@@ -9,6 +9,7 @@ from addons.entity.builder import build_entity, build_arrays
 from addons.entity.client_entity.render_controller import RenderController
 from addons.entity.client_entity.entity import Entity
 from .define import *
+from addons import config
 
 from pathlib import Path
 from addons.errors import *

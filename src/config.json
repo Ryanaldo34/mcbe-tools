@@ -1,0 +1,17 @@
+{
+    "projects_path": "",
+    "resourcepack_file_paths": {
+        "entity_textures": "textures/entity",
+        "item_textures": "textures/items",
+        "block_textures": "textures/blocks",
+        "entity_models": "models/entity",
+        "block_models": "models/block",
+        "entity_sounds": "sounds/entity",
+        "block_sounds": "sounds/block",
+        "player_sounds": "sounds/player",
+        "misc_sounds": "sounds/misc"
+    },
+    "cache": [
+
+    ]
+}

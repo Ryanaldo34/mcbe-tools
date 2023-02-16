@@ -3,13 +3,13 @@ import uuid, os, shutil, typer
 from zipfile import ZipFile
 from PIL import Image
 from addons.helpers.file_handling import write_to_file, data_from_file
-import addons.paths as paths
+from .config import config
 
 data = data_from_file(Path('../data/config.json'))
-projects_path = Path(paths.PROJECTS)
+projects_path = config.projects_path
 languages = ['en_US']
-bp_folders = ['animation_controllers', 'animations', 'blocks', 'features', 'functions', 'items', 'entities', 'structures', 'biomes', 'loot_tables', 'trades']
-rp_folders = ['animation_controllers', 'animations', 'items', 'entity', 'models', 'particles', 'render_controllers', *paths.MODELS.values(), *paths.SOUNDS.values(), *paths.TEXTURES.values()]
+bp_folders = ['animation_controllers', 'animations', 'blocks', 'features', 'functions', 'items', 'entities', 'structures', 'biomes', 'loot_tables', 'scripts', 'trades']
+rp_folders = ['animation_controllers', 'animations', 'items', 'entity', 'models', 'particles', 'render_controllers', *config.all_texture_paths, *config.all_model_paths, *config.all_sound_paths]
 app = typer.Typer()
 
 def package_skinpack():
