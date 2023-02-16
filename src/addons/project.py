@@ -13,7 +13,7 @@ rp_folders = ['animation_controllers', 'animations', 'items', 'entity', 'models'
 app = typer.Typer()
 
 def package_skinpack():
-    pass
+    ...
 
 @app.command()
 def create(

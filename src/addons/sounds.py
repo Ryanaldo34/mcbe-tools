@@ -142,7 +142,7 @@ def implement_sounds(entity: str, rp_path: Path) -> dict:
            continue
 
     write_to_file(sounds_file, sound_events)
-    return ce_sound_map if len(list(ce_sound_map)) > 0 else None
+    return ce_sound_map if len(ce_sound_map) > 0 else None
 
 def implement_sound_effects(rp_path: Path):
     """

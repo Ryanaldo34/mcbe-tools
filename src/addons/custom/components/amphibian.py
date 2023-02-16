@@ -10,8 +10,8 @@ class Component(CustomComponent):
     underwater_movement: float
     stroll_interval: int = 25
 
-    @property
-    def name(self) -> str:
+    @staticmethod
+    def get_name() -> str:
         return 'amphibian'
     
     @verify_component_properties
