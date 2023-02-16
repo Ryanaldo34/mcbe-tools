@@ -1,30 +1,4 @@
-from colorama import Fore, Back, Style
 from typing import Callable
-from configparser import NoSectionError, RawConfigParser
-import os
-
-config = RawConfigParser()
-path = path = os.path.join(os.path.dirname(__file__), '..', 'config.cfg')
-config.read(path)
-
-TEXTURE_ERRORS: bool
-GEO_ERRORS: bool
-ANIM_ERROR: bool
-AC_ERROR: bool
-SOUND_ERROR: bool
-
-try:
-    TEXTURE_ERRORS = config.getboolean('errors', 'missing_texture')
-    GEO_ERRORS = config.getboolean('errors', 'missing_geo')
-    ANIM_ERROR = config.getboolean('errors', 'missing_anim')
-    AC_ERROR = config.getboolean('errors', 'missing_ac')
-    SOUND_ERROR = config.getboolean('errors', 'missing_sounds')
-except NoSectionError:
-    TEXTURE_ERRORS = True
-    GEO_ERRORS = True
-    ANIM_ERROR = False
-    AC_ERROR = False
-    SOUND_ERROR = False
 
 class InvalidArgError(Exception):
     """Exception raise for an invalid argument passed into a function"""
