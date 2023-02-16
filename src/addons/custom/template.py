@@ -105,7 +105,7 @@ class CustomTemplateRegistry:
         """
         Adds all custom template to registry so that they can be used in building entity templates
         """
-        templates = [os.path.split(template)[-1].replace('.py', '') for template in os.listdir(os.path.join('addons', 'custom', 'templates')) if '__init__' not in template]
+        templates = [os.path.split(template)[-1].replace('.py', '') for template in os.listdir(str(Path(__file__).parent.joinpath('templates'))) if '__init__' not in template]
         for template in templates:
             try:
                 module = import_module(f'addons.custom.templates.{template}')

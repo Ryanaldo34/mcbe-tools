@@ -52,7 +52,7 @@ class Entity:
 
     @property
     def has_default_rc(self) -> bool:
-        return all(x < 2 for x in [len(self.__material_names), len(self.__textr_name_val_map, len(self.geo_names))])
+        return all(x < 2 for x in [len(self.__material_names), len(self.__textr_name_val_map), len(self.geo_names)])
 
     @property
     def textr_paths(self) -> list[str]:

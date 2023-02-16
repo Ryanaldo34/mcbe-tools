@@ -2,12 +2,13 @@
 import os
 import json
 from pathlib import Path
+from addons.helpers.file_handling import data_from_file
 
 class MCBEConfig():
     """Encapsulates the configuration data for the project
     """
     def __init__(self, config_path: Path):
-        self.__data = json.load(str(config_path))
+        self.__data = data_from_file(config_path)
         
     @property
     def projects_path(self) -> Path:

@@ -22,14 +22,15 @@ app = typer.Typer()
 def define( rp_folder: Path = typer.Argument(None, help='ABS path to the resource pack'),
             entity_file: Path = typer.Argument(None, help='ABS path to the entity behavior file'),
             fv: str = typer.Option('1.8.0', help='The format version of the client entity'),
-            anim: Path = typer.Option('', help='Specify name of the animation file for the entity'),
-            ac: Path = typer.Option('', help='Specify name of animation controller file for the entity'),
-            geo: Path = typer.Option('', help='Specify a geometry for the entity'),
+            anim: str = typer.Option('', help='Specify name of the animation file for the entity'),
+            ac: str = typer.Option('', help='Specify name of animation controller file for the entity'),
+            geo: str = typer.Option('', help='Specify a geometry for the entity'),
             material: Optional[list[str]] = typer.Option(None, help='Add a material to the entity'),
-            texture: Path = typer.Option(None, help='Specify the texture name of an entity'),
+            texture: str = typer.Option(None, help='Specify the texture name of an entity'),
             dummy: bool = typer.Option(False, help='If the entity is a dummy'),
             ac_req: bool = typer.Option(False, help='If an ac is required'),
             anim_req: bool = typer.Option(False, help='If an animation is required'),
+            geo_req: bool = typer.Option(True, help="If the entity has a geometry"),
             sounds_req: bool = typer.Option(False, help='If the entity need sounds'),
             texture_req: bool = typer.Option(True, help='If the entity requires a texture')
     ) -> None:
@@ -54,6 +55,7 @@ def define( rp_folder: Path = typer.Argument(None, help='ABS path to the resourc
         entity_data = data_from_file(entity_file)
         behaviors = EntityBehaviors(entity_data)
         name = behaviors.real_name
+        print(geo)
         geo_path = rp_folder.joinpath('models', 'entity', f'{name}.geo.json') if not geo else rp_folder.joinpath('models', 'entity', f'{geo}.geo.json')
         anim_file = anim if anim else rp_folder.joinpath('animations', f'{name}.animation.json')
         ac_file = ac if ac else rp_folder.joinpath('animation_controllers', f'{name}.animation_controllers.json')
@@ -72,9 +74,10 @@ def define( rp_folder: Path = typer.Argument(None, help='ABS path to the resourc
             ce.write_file(rp_folder, dummy=True)
             return None
 
+        print(geo_path)
         geo_data = data_from_file(geo_path)
         
-        if geo_data is None and GEO_ERRORS:
+        if geo_data is None and geo_req:
             raise MissingGeometryError('The entity is missing a required geometry definition!')
         # define all the short_name: value dictionaries for the entity
         materials = define_materials(material)

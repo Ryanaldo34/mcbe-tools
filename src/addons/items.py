@@ -1,6 +1,5 @@
 import os, typer, glob
 from .helpers.file_handling import *
-from .errors import TEXTURE_ERRORS, MissingTextureError
 from pathlib import Path
 from typing import Union
 

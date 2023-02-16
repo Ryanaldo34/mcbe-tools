@@ -87,7 +87,7 @@ def define_animations(anim_file: Path, *, req: bool = False) -> dict[str, str] |
         raise MissingAnimationError()
     
     anim_data = data_from_file(anim_file)
-    return { animation.split('.')[-1]: animation for animation in list(anim_data['animations']) }
+    return { animation.split('.')[-1]: animation for animation in list(anim_data['animations']) } if anim_data is not None else None
 
 
 def define_acs(acs_file: Path, *, req: bool = False) -> dict[str, str] | None:
@@ -114,7 +114,7 @@ def define_acs(acs_file: Path, *, req: bool = False) -> dict[str, str] | None:
         raise MissingAnimationControllerFile()
     
     ac_data = data_from_file(acs_file)
-    return [{controller.split('.')[-1]: controller} for controller in list(ac_data['animation_controllers'])]
+    return [{controller.split('.')[-1]: controller} for controller in list(ac_data['animation_controllers'])] if ac_data is not None else None
 
 def define_spawn_egg(name: str, rp_path: Path, base_color: str = None, overlay_color: str = None) -> dict:
     """
