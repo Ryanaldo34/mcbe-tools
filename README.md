@@ -16,5 +16,6 @@ Make sure you know where the save path for this! You will then run it by opening
 - The commands after the main.py path are commands I have added to the script. Using certain ones will do certain things such as defining an entity, item, or block for example.
 - The help flag (a flag, aka option, is anything preceded by --) is a flag that will tell you how to use the command. It will print out syntax and the list of flags and arguments in the terminal for you.
 - The python command invokes the python interpreter and starts the python runtime which will be running our script environment
+- Run `python path/to/where/you/downloaded/mcbe-tools/src/main.py --help` to see a list of all commands the script has to offer and how to use them
 
 # Using the entity define command
