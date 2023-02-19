@@ -11,7 +11,7 @@ CLI Developer Tools For Minecraft Bedrock Edition Developers to speed up our dev
 
 # Running the program
 
-Make sure you know where the save path for this! You will then run it by opening up the windows powershell or any other terminal and running the command `python path/to/where/you/downloaded/mcbe-tools/src/main.py entity define --help`
+Make sure you know where the save path for this is! You will then run it by opening up the windows powershell or any other terminal and running the command `python path/to/where/you/downloaded/mcbe-tools/src/main.py entity define --help`
 - Here you will paste the absolute path to the main.py file in src folder after the python command.
 - The commands after the main.py path are commands I have added to the script. Using certain ones will do certain things such as defining an entity, item, or block for example.
 - The help flag (a flag, aka option, is anything preceded by --) is a flag that will tell you how to use the command. It will print out syntax and the list of flags and arguments in the terminal for you.
@@ -19,3 +19,6 @@ Make sure you know where the save path for this! You will then run it by opening
 - Run `python path/to/where/you/downloaded/mcbe-tools/src/main.py --help` to see a list of all commands the script has to offer and how to use them
 
 # Using the entity define command
+
+Basic Usage
+`python path/to/where/you/downloaded/mcbe-tools/src/main.py entity define "path/to/resource_pack" "path/to/behavior_pack/entity_name.json"`
