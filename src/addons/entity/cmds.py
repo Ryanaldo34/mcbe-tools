@@ -55,7 +55,6 @@ def define( rp_folder: Path = typer.Argument(None, help='ABS path to the resourc
         entity_data = data_from_file(entity_file)
         behaviors = EntityBehaviors(entity_data)
         name = behaviors.real_name
-        print(geo)
         geo_path = rp_folder.joinpath('models', 'entity', f'{name}.geo.json') if not geo else rp_folder.joinpath('models', 'entity', f'{geo}.geo.json')
         anim_file = anim if anim else rp_folder.joinpath('animations', f'{name}.animation.json')
         ac_file = ac if ac else rp_folder.joinpath('animation_controllers', f'{name}.animation_controllers.json')
