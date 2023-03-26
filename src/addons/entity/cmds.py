@@ -8,11 +8,11 @@ from addons.entity.behaviors import EntityBehaviors
 from addons.entity.builder import build_entity, build_arrays
 from addons.entity.client_entity.render_controller import RenderController
 from addons.entity.client_entity.entity import Entity
+from addons.custom.template import template_registry
 from .define import *
-from addons import config
+from addons.errors import *
 
 from pathlib import Path
-from addons.errors import *
 from colorama import Fore, Back, Style
 from typing import Optional
 
@@ -21,6 +21,7 @@ app = typer.Typer()
 @app.command()
 def define( rp_folder: Path = typer.Argument(None, help='ABS path to the resource pack'),
             entity_file: Path = typer.Argument(None, help='ABS path to the entity behavior file'),
+            template: str = typer.Option('', help='The template to be generated'),
             fv: str = typer.Option('1.8.0', help='The format version of the client entity'),
             anim: str = typer.Option('', help='Specify name of the animation file for the entity'),
             ac: str = typer.Option('', help='Specify name of animation controller file for the entity'),
@@ -37,20 +38,26 @@ def define( rp_folder: Path = typer.Argument(None, help='ABS path to the resourc
     """
     Writes the client entity and render controller files of an entity
     """
-    # remake paths that are added to the entity class methods for defining information and make abc for animations and animation controller parsing
     try:
         valid_formats = ['1.8.0', '1.10.0']
         ce_builder = ClientEntityFactory()
         ce_builder.register_builder('1.8.0', ClientEntityV1_8_0)
         ce_builder.register_builder('1.10.0', ClientEntityV1_10_0)
 
-        if not entity_file.exists():
+        if not entity_file.exists() and not template:
             raise typer.BadParameter('The entity file provided DNE', param=entity_file)
         if not rp_folder.exists():
             raise typer.BadParameter('The resource pack provided DNE', param=rp_folder)
         if fv not in valid_formats:
             print(f'{fv}, is not a valid client entity format version!')
             raise typer.Abort()
+        
+        if template:
+            identifier = input('What is the identifier of the entity?: ')
+            builder = template_registry.get_template_builder(template)
+            if builder is None:
+                raise typer.Abort(f'The entity template: {template}, is not valid!')
+            builder.build_self(entity_file, identifier) # builds out the template file to json
 
         entity_data = data_from_file(entity_file)
         behaviors = EntityBehaviors(entity_data)
@@ -73,7 +80,6 @@ def define( rp_folder: Path = typer.Argument(None, help='ABS path to the resourc
             ce.write_file(rp_folder, dummy=True)
             return None
 
-        print(geo_path)
         geo_data = data_from_file(geo_path)
         
         if geo_data is None and geo_req:

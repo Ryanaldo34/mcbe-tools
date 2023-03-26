@@ -19,8 +19,8 @@ class CustomEntityTemplate:
     permutations: list[dict[str, Any]] = None
 
     def __post_init__(self):
-        if self.properties is not None or self.permutations is not None:
-            assert self.experimental
+        if self.permutations is not None:
+            self.experimental = True
 
     def build_self(self, f: Path, identifier: str) -> None:
         output = {
@@ -107,6 +107,7 @@ class CustomTemplateRegistry:
         """
         templates = [os.path.split(template)[-1].replace('.py', '') for template in os.listdir(str(Path(__file__).parent.joinpath('templates'))) if '__init__' not in template]
         for template in templates:
+            if template == '__pycache__': continue
             try:
                 module = import_module(f'addons.custom.templates.{template}')
                 if hasattr(module, 'template'):
@@ -116,6 +117,9 @@ class CustomTemplateRegistry:
                     raise AttributeError('A template must be defined correctly')
             except AttributeError:
                 print(f'Template not found: {template}')
+
+    def get_template_builder(self, name: str) -> CustomEntityTemplate:
+        return self._data.get(name)
 
 template_registry = CustomTemplateRegistry()
 template_registry.register_templates()

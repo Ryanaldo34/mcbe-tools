@@ -5,7 +5,6 @@ from PIL import Image
 from addons.helpers.file_handling import write_to_file, data_from_file
 from .config import config
 
-data = data_from_file(Path('../data/config.json'))
 projects_path = config.projects_path
 languages = ['en_US']
 bp_folders = ['animation_controllers', 'animations', 'blocks', 'features', 'functions', 'items', 'entities', 'structures', 'biomes', 'loot_tables', 'scripts', 'trades']
@@ -23,8 +22,8 @@ def create(
     """ Creates a new blank project template in the user's dedicated project folder
     
     """
-    rp_manifest: dict = data['rp_manifest']
-    bp_manifest: dict = data['bp_manifest']
+    rp_manifest: dict = config.rp_manifest
+    bp_manifest: dict = config.bp_manifest
     rp_header = str(uuid.uuid4())
     rp_name: str = project_name.lower().replace(' ', '_') + '_RP'
     bp_name: str = project_name.lower().replace(' ', '_') + '_BP'
@@ -55,12 +54,12 @@ def create(
     for folder in bp_folders:
         project_path.joinpath(bp_name, folder).mkdir(parents=True, exist_ok=True)
 
-    blocks = data['blocks.json']
-    sounds = data['sounds.json']
-    sound_defs = data['sound_definitions.json']
-    terrain = data['terrain_texture.json']
+    blocks = config.blocks_json
+    sounds = config.sounds_json
+    sound_defs = config.sound_defs
+    terrain = config.terrain_texture
     terrain['resource_pack_name'] = project_name
-    items = data['item_texture.json']
+    items = config.item_texture
     items['resource_pack_name'] = project_name
 
     write_to_file(project_path.joinpath(rp_name, 'manifest.json'), data=rp_manifest, writing=True)
@@ -111,7 +110,7 @@ def package(
                 if el not in bad_files:
                     shutil.copy(world_folder_path.joinpath(el), world_template)
 
-        manifest: dict = data['world_template_manifest']
+        manifest: dict = config.world_template_manifest
         for k, v in manifest.items():
             if isinstance(v, list):
                 for el in v:

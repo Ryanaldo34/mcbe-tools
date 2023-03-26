@@ -36,7 +36,7 @@ class Entity:
         self.__acs: list[dict[str, str]] = acs
         self.__particles: dict[str, str] = particles
         self.__sounds: dict[str, str] = sounds
-        self.__locators: dict = geometry.get_locators()
+        self.__locators = None
 
     @property
     def acs(self) -> list[dict[str, str]]:

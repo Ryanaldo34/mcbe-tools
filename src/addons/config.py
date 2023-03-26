@@ -61,5 +61,37 @@ class MCBEConfig():
     @property
     def all_texture_paths(self) -> list[str]:
         return [self.block_textures_path, self.entity_textures_path, self.item_textures_path]
+    
+    @property
+    def world_template_manifest(self) -> dict[str, any]:
+        return self.__data['world_template_manifest']
+    
+    @property
+    def bp_manifest(self) -> dict[str, any]:
+        return self.__data['bp_manifest']
+    
+    @property
+    def rp_manifest(self) -> dict[str, any]:
+        return self.__data['rp_manifest']
+    
+    @property
+    def sounds_json(self) -> dict[str, any]:
+        return self.__data['sounds.json']
+    
+    @property
+    def sound_defs(self) -> dict[str, any]:
+        return self.__data['sound_definitions.json']
+    
+    @property
+    def blocks_json(self) -> dict[str, any]:
+        return self.__data['blocks.json']
+    
+    @property
+    def terrain_texture(self) -> dict[str, any]:
+        return self.__data['terrain_texture.json']
+    
+    @property
+    def item_texture(self) -> dict[str, any]:
+        return self.__data['item_texture.json']
 
 config = MCBEConfig(Path(__file__).parent.parent.joinpath('config.json'))

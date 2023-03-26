@@ -29,7 +29,7 @@ class Geometry:
         try:
             for geo in self.__geo_data['minecraft:geometry']:
                 # minecraft:geometry key is a list of dictionaries
-                geo_name = geo['description']['identifier'].replace('geometry.cc_', '')
+                geo_name = geo['description']['identifier']
                 # set the key value pair correctly in the textures property of the client entity json object
                 if self.__num_geos == 1:
                     geo_names['default'] = geo['description']['identifier']

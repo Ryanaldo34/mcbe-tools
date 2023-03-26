@@ -1,12 +1,12 @@
-from addons.custom.component import CustomComponent, verify_component_properties
-from typing import Any
+from addons.custom.component import CustomComponent, verify_component_properties, Range
+from typing import Any, Annotated
 
 class Component(CustomComponent):
-    families: list
-    health: int
+    families: list[str]
+    health: Annotated[int, Range(1, 1000)]
     height: float
     width: float
-    speed: float
+    speed: float = 0.0
 
     @staticmethod
     def get_name() -> str:

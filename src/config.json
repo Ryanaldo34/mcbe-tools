@@ -1,5 +1,5 @@
 {
-    "projects_path": "",
+    "projects_path": "C:\\Users\\ryan\\OneDrive\\Documents\\projects",
     "resourcepack_file_paths": {
         "entity_textures": "textures/entity",
         "item_textures": "textures/items",
@@ -10,6 +10,89 @@
         "block_sounds": "sounds/block",
         "player_sounds": "sounds/player",
         "misc_sounds": "sounds/misc"
+    },
+    "rp_manifest": {
+        "format_version": 2,
+        "header": {
+            "description": "My dirt resource pack Add-On!",
+            "name": "My Resource Pack",
+            "uuid":"",
+            "version": [1, 0, 0],
+            "min_engine_version": [1, 19, 7]
+        },
+        "modules": [
+            {
+                "description": "My First Add-On!",
+                "type": "resources",
+                "uuid": "",
+                "version": [1, 0, 0]
+            }
+        ]
+    },
+    "bp_manifest": {
+        "format_version": 2,
+        "header": {
+            "description": "",
+            "name": "",
+            "uuid": "",
+            "version": [1, 0, 0],
+            "min_engine_version": [1, 19, 7]
+        },
+        "modules": [
+            {
+                "description": "",
+                "type": "data",
+                "uuid": "",
+                "version": [1, 0, 0]
+            }
+        ],
+        "dependencies": [
+            {
+                "uuid":"UUID from the header section of manifest.json in My_RESOURCE_Pack",
+                "version": [1, 0, 0]
+            }
+        ]
+    },
+    "world_template_manifest": {
+        "header": {
+                "name": "pack.name",
+                "description": "pack.description",
+                "version": [1, 0, 0],
+                "uuid": "<GENERATE A UUID>"
+        },
+        "modules": [
+            {
+                "version": [1, 0, 0],
+                "type": "world_template",
+                "uuid": "<GENERATE A UUID>"
+            }
+        ],
+        "format_version": 2
+    },
+    "blocks.json": {
+        "format_version": "1.16.0"
+    },
+    "terrain_texture.json": {
+        "resource_pack_name": "PACK NAME",
+        "texture_name": "atlas.terrain",
+        "padding": 8,
+        "num_mip_levels": 4,
+        "texture_data": {}
+    },
+    "item_texture.json": {
+        "resource_pack_name": "PACK NAME",
+        "texture_name": "atlas.items",
+        "texture_data": {}
+    },
+    "sounds.json": {
+        "entity_sounds": {
+            "entities": {}
+        },
+        "block_sounds": {}
+    },
+    "sound_definitions.json": {
+        "format_version": "1.14.0",
+        "sound_definitions": {}
     },
     "cache": [
 
