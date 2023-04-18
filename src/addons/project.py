@@ -2,7 +2,7 @@ from pathlib import Path
 import uuid, os, shutil, typer
 from zipfile import ZipFile
 from PIL import Image
-from addons.helpers.file_handling import write_to_file, data_from_file
+from addons.helpers.file_handling import write_to_file
 from .config import config
 
 projects_path = config.projects_path
@@ -98,33 +98,53 @@ def package(
             path.mkdir()
         world_template = package_path.joinpath('Content', 'world_template')
         template_texts = world_template.joinpath('texts')
-        texts = [f'pack.name={project_name}', f'pack.description{project_description}']
+        texts = [f'pack.name={project_name}', f'pack.description={project_description}']
         os.makedirs(str(template_texts), exist_ok=True)
         bad_files = ['level.dat_old', 'world_behavior_pack_history.json', 'world_resource_pack_history.json']
 
         for el in os.listdir(world_folder_path):
-            if os.path.isdir(el):
-                shutil.copytree(world_folder_path.joinpath(el), world_template)
+            path = world_folder_path.joinpath(el)
+            if not path.is_file():
+                shutil.copytree(path, world_template.joinpath(el))
             
             else:
                 if el not in bad_files:
-                    shutil.copy(world_folder_path.joinpath(el), world_template)
+                    shutil.copyfile(str(path), world_template.joinpath(el))
 
-        manifest: dict = config.world_template_manifest
-        for k, v in manifest.items():
-            if isinstance(v, list):
-                for el in v:
-                    if not isinstance(el, dict): continue
-                    if 'uuid' in el:
-                        manifest[k]['uuid'] = str(uuid.uuid4())
-            else:
-                if not isinstance(v, dict): continue
-                if 'uuid' in v:
-                    manifest[k]['uuid'] = str(uuid.uuid4())
-            if k == 'uuid':
-                manifest['uuid'] = str(uuid.uuid4())
-            else:
-                continue
+        manifest = {
+            "header": {
+                    "name": "pack.name",
+                    "description": "pack.description",
+                    "version": [1, 0, 0],
+                    "base_game_version": [1, 19, 0],
+                    "lock_template_options": True,
+                    "uuid": str(uuid.uuid4())
+            },
+            "modules": [
+                {
+                    "version": [1, 0, 0],
+                    "type": "world_template",
+                    "uuid": str(uuid.uuid4())
+                }
+            ],
+            "format_version": 2
+        }
+
+        skins_manifest = {
+            "header": {
+                "name": "pack.name",
+                "version": [1, 0, 0],
+                "uuid": str(uuid.uuid4())
+            },
+            "modules": [
+                {
+                    "version": [1, 0, 0],
+                    "type": "skin_pack",
+                    "uuid": str(uuid.uuid4())
+                }
+            ],
+            "format_version": 1
+        }
 
         write_to_file(world_template.joinpath('manifest.json'), manifest, writing=True)
         write_to_file(template_texts.joinpath('languages.json'), languages, writing=True)
@@ -149,7 +169,7 @@ def package(
                 # store art
                 store_name = store_art.joinpath(f'{project_file_name}_screenshot_{i}.jpg')
                 store_img = Image.open(marketing_name)
-                store_img.resize((800, 450))
+                store_img.thumbnail((800, 450))
                 store_img.save(store_name) # save the resized image to the store art folder with its correct name
                 store_img.close()
             else:
@@ -161,9 +181,13 @@ def package(
                     shutil.move(panorama_file, new_panorama_file) # format the file with the projectname_panorama.jpg format
                 if 'keyart' in file_name:
                     thumbnail = Image.open(curr_file_path)
-                    thumbnail.resize((800, 450))
+                    icon = Image.open(curr_file_path)
+                    icon.thumbnail((800, 450))
+                    thumbnail.thumbnail((800, 450))
                     thumbnail.save(store_art.joinpath(f'{project_file_name}_Thumbnail_0.jpg'))
+                    icon.save(world_template.joinpath('world_icon.jpeg'))
                     thumbnail.close()
+                    icon.close()
                     marketing_keyart = f'{project_file_name}_MarketingKeyArt.jpg'
                     shutil.move(curr_file_path, marketing_art.joinpath(marketing_keyart))
                 if 'partnerart' in file_name:
