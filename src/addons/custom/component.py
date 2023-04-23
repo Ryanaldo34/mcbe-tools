@@ -23,7 +23,6 @@ class CustomComponent(ABC):
     @abstractmethod
     def build_self(self, *, root: dict[str, Any], properties: dict[str, Any]) -> None:
         """When the project is built, a behavior file is parsed and any instances of this custom component are compiled"""
-        ...
 
 @dataclass(frozen=True)
 class CustomComponentRegistry:

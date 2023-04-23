@@ -1,6 +1,6 @@
 from pathlib import Path
 from addons.entity.behaviors import EntityBehaviors
-from addons.helpers.file_handling import data_from_file, write_to_file
+from addons.helpers import data_from_file, write_to_file
 from .geo import Geometry
 
 class Entity:

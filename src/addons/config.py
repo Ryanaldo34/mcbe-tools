@@ -2,7 +2,7 @@
 import os
 import json
 from pathlib import Path
-from addons.helpers.file_handling import data_from_file
+from addons.helpers import data_from_file
 
 class MCBEConfig():
     """Encapsulates the configuration data for the project

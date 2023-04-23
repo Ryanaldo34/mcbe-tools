@@ -1,5 +1,5 @@
 from addons.errors import *
-from addons.helpers.file_handling import *
+from addons.helpers import *
 
 class RenderController:
     """Respresents a render controller for a particular entity"""

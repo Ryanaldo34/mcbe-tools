@@ -1,7 +1,6 @@
 import os
 from pathlib import Path
-from .helpers.file_handling import data_from_file, write_to_file
-import pprint
+from addons.helpers import data_from_file, write_to_file
 
 def createDefs(RP_PATH: Path, category_path: Path, definition_data: dict, category: str = 'neutral') -> dict:
     """

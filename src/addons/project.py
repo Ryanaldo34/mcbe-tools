@@ -2,7 +2,7 @@ from pathlib import Path
 import uuid, os, shutil, typer
 from zipfile import ZipFile
 from PIL import Image
-from addons.helpers.file_handling import write_to_file
+from addons.helpers import write_to_file
 from .config import config
 
 projects_path = config.projects_path

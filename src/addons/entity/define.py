@@ -3,7 +3,7 @@
 """
 from addons.entity.client_entity.entity import Entity
 from addons.errors import *
-from addons.helpers.file_handling import data_from_file, write_to_file
+from addons.helpers import data_from_file, write_to_file, get_short_name
 
 import os
 from pathlib import Path
@@ -62,6 +62,23 @@ def define_textures(texture_path: Path, *, req: bool = False) -> dict[str, str] 
         textr = textr[pos:].replace('.png', '').replace(os.sep, '/')
         textures[i] = textr
     return { textr.split('/')[-1].split('_')[-1]: textr for textr in textures }
+
+def define_particles(anim_file: Path) -> dict[str, str] | None:
+    """Defines the particles by parising any listed in the animation file"""
+    anim_data = data_from_file(anim_file)
+    particles = {}
+    if anim_data is None:
+        return None
+    animations: dict[str, dict[str, any]] = anim_data.get('animations')
+    for animation in animations.values():
+        particle_effects: dict[str, dict[str, str]] = animation.get('particle_effects')
+        if particle_effects is None:
+            continue
+        for key in particle_effects.keys():
+            particle_id = particle_effects[key].get('effect')
+            particle_name = get_short_name(particle_id)
+            particles[particle_name] = particle_id
+    return particles
 
 def define_animations(anim_file: Path, *, req: bool = False) -> dict[str, str] | None:
     """Defines the short_name: animation dictionary for an entity's animations

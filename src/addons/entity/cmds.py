@@ -1,7 +1,7 @@
 import typer
 import addons.entity.client_entity as client_entity
 from addons.sounds import implement_sounds
-from addons.helpers.file_handling import write_to_file, data_from_file
+from addons.helpers import write_to_file, data_from_file
 from addons.entity.client_entity.factory import ClientEntityFactory
 from addons.entity.client_entity.versions import ClientEntityV1_8_0, ClientEntityV1_10_0
 from addons.entity.behaviors import EntityBehaviors
@@ -88,6 +88,7 @@ def define( rp_folder: Path = typer.Argument(None, help='ABS path to the resourc
         materials = define_materials(material)
         textures_dict = define_textures(texture_path, req=texture_req)
         anim_dict = define_animations(anim_file, req=anim_req)
+        particles_dict = define_particles(anim_file)
         ac_dict = define_acs(ac_file, req=ac_req)
         geo_object = client_entity.geo.Geometry(geo_data, dummy=False)
         sounds = implement_sounds(name, rp_folder)
@@ -101,7 +102,8 @@ def define( rp_folder: Path = typer.Argument(None, help='ABS path to the resourc
             anims=anim_dict,
             acs=ac_dict,
             spawn_egg=spawn_egg,
-            sounds=sounds
+            sounds=sounds,
+            particles=particles_dict
         )
         # client entity
         ce = ce_builder.create(fv, entity)

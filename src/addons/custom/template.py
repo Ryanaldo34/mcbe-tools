@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
-from addons.helpers.file_handling import write_to_file
+from addons.helpers import write_to_file
 from importlib import import_module
 import os
 

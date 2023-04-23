@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from pathlib import Path
 from .entity import Entity
-from addons.helpers.file_handling import *
+from addons.helpers import *
 from .render_controller import RenderController
 
 class ClientEntityBase(ABC):

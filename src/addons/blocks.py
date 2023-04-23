@@ -1,6 +1,8 @@
-import typer, os
+import typer
+import os
 from pathlib import Path
-from addons.helpers.file_handling import data_from_file, write_to_file
+
+import addons.helpers as helpers
 from .sounds import define_block_sounds
 
 app = typer.Typer()
@@ -8,10 +10,7 @@ app = typer.Typer()
 class Block:
     def __init__(self, block_data: dict):
         self.__data: dict = block_data
-        try:
-            self.__properties: dict = self.__data['minecraft:block']['description']['properties']
-        except KeyError:
-            self.__properties = None
+        self.__properties: dict[str, any] = self.__data['minecraft:block']['description'].get('properties')
 
     @property
     def identifier(self) -> str:
@@ -19,11 +18,11 @@ class Block:
 
     @property
     def name(self):
-        return self.identifier.split(':')[-1]
+        return helpers.get_short_name(self.identifier)
 
     @property
     def real_name(self):
-        return self.identifier.replace('_', ' ').title()
+        return helpers.id_to_title(self.identifier)
 
     def define_properties(self, path: Path):
         pass
@@ -35,7 +34,7 @@ class Block:
         self.__data['minecraft:block']['components']['material_instances'] = instances
 
     def build(self, file_path: Path):
-        write_to_file(file_path, self.__data)
+        helpers.write_to_file(file_path, self.__data)
 
 @app.command()
 def sounds(
@@ -71,7 +70,7 @@ def define(
     terrain_texture_data: dict
     blocks_data: dict
     if terrain_textures.exists():
-        terrain_texture_data = data_from_file(terrain_textures)
+        terrain_texture_data = helpers.data_from_file(terrain_textures)
     
     else:
         terrain_texture_data = {
@@ -82,20 +81,20 @@ def define(
         }
     
     if blocks_rp_file.exists():
-        blocks_data = data_from_file(blocks_rp_file)
+        blocks_data = helpers.data_from_file(blocks_rp_file)
 
     else:
         blocks_data = {
             'format_version': "1.19.30"
         }
 
-    block = Block(data_from_file(behavior_file))
+    block = Block(helpers.data_from_file(behavior_file))
     terrain_texture_data['texture_data'][block.name] = {}
     block_textr_folder = rp_path.joinpath('textures', 'blocks', block.name)
     block_geo_file = rp_path.joinpath('models', 'block', f'{block.name}.geo.json')
     blocks_data[block.identifier] = {}
     if block_geo_file.exists():
-        geo_data = data_from_file(block_geo_file)
+        geo_data = helpers.data_from_file(block_geo_file)
         block.define_geometry(geo_data[0]['description']['identifier'])
     # if the block has more than 1 texture
     if block_textr_folder.exists():
@@ -140,8 +139,8 @@ def define(
     blocks_data[block.identifier]['sound'] = block.name
 
     print(blocks_data, terrain_texture_data)
-    write_to_file(blocks_rp_file, blocks_data) # blocks.json
-    write_to_file(terrain_textures, terrain_texture_data) # terrain_texture.json
+    helpers.write_to_file(blocks_rp_file, blocks_data) # blocks.json
+    helpers.write_to_file(terrain_textures, terrain_texture_data) # terrain_texture.json
     block.build(behavior_file)
 
     with open(texts_file, 'a+') as texts:

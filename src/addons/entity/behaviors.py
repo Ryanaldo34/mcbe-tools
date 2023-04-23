@@ -1,6 +1,6 @@
 from pathlib import Path
 from addons.errors import BadDataInputExcep
-from addons.helpers.file_handling import write_to_file
+from addons.helpers import write_to_file
 from typing import Any
 from addons.custom.component import component_registry, CustomComponent
 from addons.entity.properties import EntityProperties

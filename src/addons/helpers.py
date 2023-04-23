@@ -1,7 +1,18 @@
-import json, os
+"""Helpers for the project"""
+
+import json
 from addons.errors import InvalidArgError
 from pathlib import Path
 from typing import Union
+
+def get_short_name(long_name: str) -> str:
+    """Converts an id to a short name"""
+    no_namespace = long_name.split(':')[-1]
+    return no_namespace.split('.')[-1]
+
+def id_to_title(identifier: str) -> str:
+    """Converts an id to a title for writing to lang files"""
+    return get_short_name(identifier).replace('_', ' ').title()
 
 def data_from_file(path: Path) -> Union[dict[str, str], list[str]]:
     """ opens a json or txt file and loads the data from it
@@ -12,24 +23,15 @@ def data_from_file(path: Path) -> Union[dict[str, str], list[str]]:
     """
     if not isinstance(path, Path):
         path = Path(path)
-
     if not path.is_file() and path.exists():
         raise InvalidArgError(path, data_from_file)
-
-    if not path.exists(): return None
-    
-    if path.suffix == '.json':
-        with path.open() as f:
-            data = json.load(f)
-            return data
-    
-    elif path.suffix == '.lang' or path.suffix == '.txt':
-        with path.open() as f:
-            data = f.readlines()
-            return data
-
-    else:
+    if not path.exists():
         return None
+    with path.open('r', encoding='UTF-8') as f:
+        if path.suffix == '.json':
+            return json.load(f)
+        if path.suffix in ['.lang', '.txt']:
+            return f.readlines()
 
 def write_to_file(path: Path, data: Union[dict[str, str], list[str]], writing: bool = True):
     """ Writes a python dictionary to a JSON file
@@ -48,22 +50,19 @@ def write_to_file(path: Path, data: Union[dict[str, str], list[str]], writing: b
 
     if path.suffix == '.json':
         if writing:
-            with path.open('w') as f:
+            with path.open('w', encoding='UTF-8') as f:
                 json.dump(data, f, indent = 4, sort_keys=True)
-
         else:
-            with path.open('r+') as f:
+            with path.open('r+', encoding='UTF-8') as f:
                 f.seek(0)
                 json.dump(data, f, indent=4, sort_keys=True)
                 f.truncate()
-
     else:
         if writing:
-            with path.open('w') as f:
+            with path.open('w', encoding='UTF-8') as f:
                 for line in data:
                     f.write(line+"\n")
-
         else:
-            with path.open('a') as f:
+            with path.open('a', encoding='UTF-8') as f:
                 for line in data:
                     f.write(line+"\n")
