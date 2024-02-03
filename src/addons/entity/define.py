@@ -72,13 +72,12 @@ def define_particles(anim_file: Path) -> dict[str, str] | None:
     animations: dict[str, dict[str, any]] = anim_data.get('animations')
     for animation in animations.values():
         particle_effects: dict[str, dict[str, str]] = animation.get('particle_effects')
-        if particle_effects is None:
-            continue
-        for key in particle_effects.keys():
-            particle_id = particle_effects[key].get('effect')
-            particle_name = get_short_name(particle_id)
-            particles[particle_name] = particle_id
-    return particles
+        if particle_effects is not None:
+            for key in particle_effects.keys():
+                particle_id = particle_effects[key].get('effect')
+                particle_name = get_short_name(particle_id)
+                particles[particle_name] = particle_id
+    return particles if len(particles) > 0 else None
 
 def define_animations(anim_file: Path, *, req: bool = False) -> dict[str, str] | None:
     """Defines the short_name: animation dictionary for an entity's animations
@@ -104,7 +103,7 @@ def define_animations(anim_file: Path, *, req: bool = False) -> dict[str, str] |
         raise MissingAnimationError()
     
     anim_data = data_from_file(anim_file)
-    return { animation.split('.')[-1]: animation for animation in list(anim_data['animations']) } if anim_data is not None else None
+    return { get_short_name(animation): animation for animation in list(anim_data['animations']) } if anim_data is not None else None
 
 
 def define_acs(acs_file: Path, *, req: bool = False) -> dict[str, str] | None:
@@ -129,9 +128,9 @@ def define_acs(acs_file: Path, *, req: bool = False) -> dict[str, str] | None:
     """
     if req and not acs_file.is_file():
         raise MissingAnimationControllerFile()
-    
+
     ac_data = data_from_file(acs_file)
-    return [{controller.split('.')[-1]: controller} for controller in list(ac_data['animation_controllers'])] if ac_data is not None else None
+    return [{get_short_name(controller): controller} for controller in list(ac_data['animation_controllers'])] if ac_data is not None else None
 
 def define_spawn_egg(name: str, rp_path: Path, base_color: str = None, overlay_color: str = None) -> dict:
     """
@@ -165,4 +164,4 @@ def define_spawn_egg(name: str, rp_path: Path, base_color: str = None, overlay_c
         spawn_egg['texture'] = 'spawn_egg'
         spawn_egg['texture_index'] = 0
 
-    return spawn_egg 
+    return spawn_egg
